@@ -22,7 +22,7 @@ export function Navbar() {
           />
         </div>
 
-        <nav className="ml-auto hidden items-center gap-6 text-sm text-ink-secondary md:flex">
+        <nav className="ml-auto flex items-center gap-6 text-sm text-ink-secondary">
           <a href="/ranking" className="transition-colors hover:text-ink-primary">
             Ranking
           </a>
@@ -33,10 +33,6 @@ export function Navbar() {
             Alertas
           </a>
         </nav>
-
-        <button className="rounded-full bg-accent px-4 py-2 text-sm font-medium text-bg-base transition-opacity hover:opacity-90">
-          Entrar
-        </button>
       </div>
     </header>
   );
