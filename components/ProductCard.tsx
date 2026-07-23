@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { Heart } from 'lucide-react';
 import type { Produto } from '@/lib/types';
 import { ehFavorito, alternarFavorito } from '@/lib/favorites';
@@ -61,8 +62,8 @@ export function ProductCard({ produto }: { produto: Produto }) {
     : 0;
 
   return (
-    
-      <a       href={produto.linkAfiliado}
+    <Link
+      href={`/produto/${produto.id}`}
       className="glass group flex flex-col gap-3 rounded-2xl p-4 shadow-card transition-transform hover:-translate-y-0.5 hover:border-accent/30"
     >
       <div className="relative overflow-hidden rounded-xl bg-bg-raised">
@@ -126,6 +127,6 @@ export function ProductCard({ produto }: { produto: Produto }) {
           )}
         </div>
       </div>
-    </a>
+    </Link>
   );
 }
