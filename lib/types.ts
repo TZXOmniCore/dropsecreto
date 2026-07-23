@@ -6,12 +6,14 @@ export interface Produto {
   precoAntigo: number | null;
   dropScore: number;
   classificacao: 'Excelente' | 'Boa' | 'Regular' | 'Ruim';
+  lojaNome: string;
   lojaOficial: boolean;
   freteGratis: boolean;
   temCupom: boolean;
   quantidadeVendida: number;
   avaliacao: number;
-  historico90d: number[]; // usado no mini-gráfico do card
+  categoriaSlug: string;
+  historico90d: number[];
   linkAfiliado: string;
 }
 
