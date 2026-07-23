@@ -1,4 +1,9 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { Heart } from 'lucide-react';
 import type { Produto } from '@/lib/types';
+import { ehFavorito, alternarFavorito } from '@/lib/favorites';
 
 function formatarPreco(valor: number) {
   return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -17,8 +22,6 @@ function estiloDoScore(classificacao: Produto['classificacao']) {
   }
 }
 
-// Sparkline simples do histórico de 90 dias — sem eixo, sem legenda:
-// o único ponto é mostrar a tendência (caindo, subindo, estável) num relance.
 function Sparkline({ dados }: { dados: number[] }) {
   const min = Math.min(...dados);
   const max = Math.max(...dados);
@@ -40,12 +43,25 @@ function Sparkline({ dados }: { dados: number[] }) {
 }
 
 export function ProductCard({ produto }: { produto: Produto }) {
+  const [favoritado, setFavoritado] = useState(false);
+
+  useEffect(() => {
+    setFavoritado(ehFavorito(produto.id));
+  }, [produto.id]);
+
+  function alternarClique(e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    const atualizados = alternarFavorito(produto.id);
+    setFavoritado(atualizados.includes(produto.id));
+  }
+
   const desconto = produto.precoAntigo
     ? Math.round(((produto.precoAntigo - produto.precoAtual) / produto.precoAntigo) * 100)
     : 0;
 
   return (
-    <a
+    
       href={produto.linkAfiliado}
       className="glass group flex flex-col gap-3 rounded-2xl p-4 shadow-card transition-transform hover:-translate-y-0.5 hover:border-accent/30"
     >
@@ -63,8 +79,18 @@ export function ProductCard({ produto }: { produto: Produto }) {
           {produto.dropScore}
           <span className="font-body font-normal opacity-70">score</span>
         </div>
+
+        <button
+          type="button"
+          onClick={alternarClique}
+          aria-label={favoritado ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
+          className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-bg-base/70 backdrop-blur-sm transition-colors hover:bg-bg-base"
+        >
+          <Heart className={`h-4 w-4 ${favoritado ? 'fill-accent text-accent' : 'text-ink-secondary'}`} />
+        </button>
+
         {desconto > 0 && (
-          <div className="absolute right-2 top-2 rounded-full bg-bg-base/80 px-2 py-1 text-xs font-medium text-accent mono-num">
+          <div className="absolute bottom-2 right-2 rounded-full bg-bg-base/80 px-2 py-1 text-xs font-medium text-accent mono-num">
             -{desconto}%
           </div>
         )}
