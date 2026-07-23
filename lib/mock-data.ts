@@ -107,3 +107,21 @@ export const PRODUTOS_MOCK: Produto[] = [
     precoAtual: 69.9,
     precoAntigo: 84.9,
     dropScore: 63,
+    classificacao: 'Regular',
+    lojaNome: 'TechStore Oficial',
+    lojaOficial: true,
+    freteGratis: false,
+    temCupom: false,
+    quantidadeVendida: 1900,
+    avaliacao: 4.5,
+    categoriaSlug: 'celulares',
+    historico90d: [82, 81, 80, 79, 78, 76, 74, 72, 70, 69.9],
+    linkAfiliado: '#',
+  },
+];
+
+export const FLASH_DEALS: Produto[] = PRODUTOS_MOCK.filter((p) => p.dropScore >= 85);
+
+export const RANKING_DO_DIA: Produto[] = [...PRODUTOS_MOCK]
+  .sort((a, b) => b.dropScore - a.dropScore)
+  .slice(0, 5);
