@@ -62,7 +62,7 @@ export function ProductCard({ produto }: { produto: Produto }) {
 
   return (
     
-      href={produto.linkAfiliado}
+      <a       href={produto.linkAfiliado}
       className="glass group flex flex-col gap-3 rounded-2xl p-4 shadow-card transition-transform hover:-translate-y-0.5 hover:border-accent/30"
     >
       <div className="relative overflow-hidden rounded-xl bg-bg-raised">
