@@ -1,6 +1,7 @@
 import { Navbar } from '@/components/Navbar';
 import { ScannerHero } from '@/components/ScannerHero';
 import { TrustBar } from '@/components/TrustBar';
+import { HowItWorks } from '@/components/HowItWorks';
 import { CategoryChips } from '@/components/CategoryChips';
 import { ProductCard } from '@/components/ProductCard';
 import { FlashDeals } from '@/components/FlashDeals';
@@ -14,6 +15,7 @@ export default function HomePage() {
       <Navbar />
       <ScannerHero />
       <TrustBar />
+      <HowItWorks />
 
       <div className="mx-auto max-w-7xl px-6">
         <CategoryChips categorias={CATEGORIAS} />
