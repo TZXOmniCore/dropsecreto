@@ -4,24 +4,24 @@ import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { ProductCard } from '@/components/ProductCard';
 import { PriceHistoryChart } from '@/components/PriceHistoryChart';
-import { PRODUTOS_MOCK } from '@/lib/mock-data';
+import { buscarProdutoPorId, buscarSemelhantes } from '@/lib/produtos';
+
+export const revalidate = 60;
 
 function formatarPreco(valor: number) {
   return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
 
-export default function ProdutoPage({ params }: { params: { id: string } }) {
-  const produto = PRODUTOS_MOCK.find((p) => p.id === params.id);
+export default async function ProdutoPage({ params }: { params: { id: string } }) {
+  const produto = await buscarProdutoPorId(params.id);
   if (!produto) notFound();
+
+  const semelhantes = await buscarSemelhantes(produto.categoriaSlug, produto.id, 4);
 
   const economiaReais = produto.precoAntigo ? produto.precoAntigo - produto.precoAtual : 0;
   const economiaPercentual = produto.precoAntigo
     ? Math.round((economiaReais / produto.precoAntigo) * 100)
     : 0;
-
-  const semelhantes = PRODUTOS_MOCK.filter(
-    (p) => p.categoriaSlug === produto.categoriaSlug && p.id !== produto.id
-  ).slice(0, 4);
 
   return (
     <main>
