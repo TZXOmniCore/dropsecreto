@@ -101,10 +101,14 @@ function mapearProduto(row: ProdutoRow): Produto {
 
 // --- Categorias ---
 
+// Só traz categorias que têm pelo menos uma oferta aprovada — evita chip
+// de categoria vazia que leva pra uma página sem produto nenhum. O join
+// "produtos!inner" já restringe às categorias com pelo menos 1 produto
+// visível (a RLS de produtos, aprovado+ativo, se aplica aqui também).
 export async function buscarCategorias(): Promise<Categoria[]> {
   const { data, error } = await supabase
     .from('categorias')
-    .select('id, nome, slug')
+    .select('id, nome, slug, produtos!inner(id)')
     .eq('ativa', true)
     .order('ordem', { ascending: true });
 
@@ -113,7 +117,7 @@ export async function buscarCategorias(): Promise<Categoria[]> {
     return [];
   }
 
-  return data ?? [];
+  return (data ?? []).map(({ id, nome, slug }) => ({ id, nome, slug }));
 }
 
 // --- Listagens de produto ---
