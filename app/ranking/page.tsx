@@ -1,10 +1,12 @@
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { RankingList } from '@/components/RankingList';
-import { PRODUTOS_MOCK } from '@/lib/mock-data';
+import { buscarRankingDoDia } from '@/lib/produtos';
 
-export default function RankingPage() {
-  const ranking = [...PRODUTOS_MOCK].sort((a, b) => b.dropScore - a.dropScore);
+export const revalidate = 60;
+
+export default async function RankingPage() {
+  const ranking = await buscarRankingDoDia(50);
 
   return (
     <main>
@@ -15,7 +17,13 @@ export default function RankingPage() {
           Os produtos com maior Drop Score de hoje, do melhor para o pior.
         </p>
         <div className="mt-8">
-          <RankingList produtos={ranking} />
+          {ranking.length === 0 ? (
+            <div className="glass rounded-2xl p-10 text-center text-sm text-ink-secondary">
+              Ainda não há produtos aprovados pra montar o ranking de hoje.
+            </div>
+          ) : (
+            <RankingList produtos={ranking} />
+          )}
         </div>
       </div>
       <Footer />
