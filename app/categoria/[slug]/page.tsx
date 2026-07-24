@@ -3,13 +3,16 @@ import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { CategoryChips } from '@/components/CategoryChips';
 import { ProductCard } from '@/components/ProductCard';
-import { CATEGORIAS, PRODUTOS_MOCK } from '@/lib/mock-data';
+import { buscarCategorias, buscarProdutosPorCategoria } from '@/lib/produtos';
 
-export default function CategoriaPage({ params }: { params: { slug: string } }) {
-  const categoria = CATEGORIAS.find((c) => c.slug === params.slug);
+export const revalidate = 60;
+
+export default async function CategoriaPage({ params }: { params: { slug: string } }) {
+  const categorias = await buscarCategorias();
+  const categoria = categorias.find((c) => c.slug === params.slug);
   if (!categoria) notFound();
 
-  const produtos = PRODUTOS_MOCK.filter((p) => p.categoriaSlug === categoria.slug);
+  const produtos = await buscarProdutosPorCategoria(categoria.slug);
 
   return (
     <main>
@@ -27,7 +30,7 @@ export default function CategoriaPage({ params }: { params: { slug: string } }) 
           {produtos.length} {produtos.length === 1 ? 'oferta encontrada' : 'ofertas encontradas'}
         </p>
 
-        <CategoryChips categorias={CATEGORIAS} />
+        <CategoryChips categorias={categorias} />
 
         {produtos.length === 0 ? (
           <div className="glass mt-8 rounded-2xl p-10 text-center text-sm text-ink-secondary">
