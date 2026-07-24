@@ -7,6 +7,8 @@ import { ProductCard } from '@/components/ProductCard';
 import { FlashDeals } from '@/components/FlashDeals';
 import { RankingList } from '@/components/RankingList';
 import { Footer } from '@/components/Footer';
+// HowItWorks agora renderiza mais abaixo na página (perto do fim) — em celular
+// ela empurrava a vitrine de produtos pra baixo da dobra.
 import {
   buscarCategorias,
   buscarTopOfertas,
@@ -31,7 +33,6 @@ export default async function HomePage() {
       <Navbar />
       <ScannerHero />
       <TrustBar />
-      <HowItWorks />
 
       <div className="mx-auto max-w-7xl px-6">
         <CategoryChips categorias={categorias} />
@@ -82,6 +83,8 @@ export default async function HomePage() {
           </section>
         )}
       </div>
+
+      <HowItWorks />
 
       <Footer />
     </main>
