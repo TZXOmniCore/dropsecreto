@@ -10,7 +10,7 @@ const CRITERIOS = [
 
 export function HowItWorks() {
   return (
-    <section id="como-funciona" className="border-b border-line py-16">
+    <section id="como-funciona" className="border-b border-line py-10 sm:py-16">
       <div className="mx-auto max-w-7xl px-6">
         <h2 className="font-display text-2xl font-bold text-ink-primary">
           Como o Drop Score funciona
