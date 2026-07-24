@@ -5,19 +5,21 @@ import { Heart } from 'lucide-react';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { ProductCard } from '@/components/ProductCard';
-import { PRODUTOS_MOCK } from '@/lib/mock-data';
+import type { Produto } from '@/lib/types';
+import { buscarProdutosPorIds } from '@/lib/produtos';
 import { obterFavoritos } from '@/lib/favorites';
 
 export default function FavoritosPage() {
-  const [idsFavoritos, setIdsFavoritos] = useState<string[]>([]);
+  const [produtos, setProdutos] = useState<Produto[]>([]);
   const [carregado, setCarregado] = useState(false);
 
   useEffect(() => {
-    setIdsFavoritos(obterFavoritos());
-    setCarregado(true);
+    const ids = obterFavoritos();
+    buscarProdutosPorIds(ids).then((resultado) => {
+      setProdutos(resultado);
+      setCarregado(true);
+    });
   }, []);
-
-  const produtos = PRODUTOS_MOCK.filter((p) => idsFavoritos.includes(p.id));
 
   return (
     <main>
