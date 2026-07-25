@@ -12,6 +12,14 @@ export function CategoryChips({ categorias }: { categorias: Categoria[] }) {
           {c.nome}
         </a>
       ))}
+      {categorias.length > 0 && (
+        <a
+          href="/categorias"
+          className="shrink-0 rounded-full border border-accent/30 px-4 py-2 text-sm text-accent transition-colors hover:border-accent/60"
+        >
+          Ver todas →
+        </a>
+      )}
     </div>
   );
 }
