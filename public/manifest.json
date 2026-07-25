@@ -1,0 +1,16 @@
+{
+  "name": "Drop Secreto — Radar Inteligente de Ofertas",
+  "short_name": "Drop Secreto",
+  "description": "Todo produto passou por uma análise automática de preço, avaliação, vendas e histórico. O resto, a gente descarta.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0A0A0B",
+  "theme_color": "#0A0A0B",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
