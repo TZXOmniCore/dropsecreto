@@ -19,9 +19,6 @@ export function Footer() {
           <a href="/como-funciona" className="transition-colors hover:text-ink-primary">
             Como funciona
           </a>
-          <a href="/categorias" className="transition-colors hover:text-ink-primary">
-            Categorias
-          </a>
         </div>
 
         <p className="mt-6 text-xs text-ink-faint">
