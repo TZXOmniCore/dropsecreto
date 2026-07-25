@@ -5,16 +5,32 @@ function formatarPreco(valor: number) {
   return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
 
-export function RankingList({ produtos }: { produtos: Produto[] }) {
+function badgeDoItem(p: Produto, variante: 'score' | 'desconto') {
+  if (variante === 'desconto') {
+    const desconto = p.precoAntigo
+      ? Math.round(((p.precoAntigo - p.precoAtual) / p.precoAntigo) * 100)
+      : 0;
+    return `-${desconto}%`;
+  }
+  return `${p.dropScore} score`;
+}
+
+export function RankingList({
+  produtos,
+  variante = 'score',
+}: {
+  produtos: Produto[];
+  variante?: 'score' | 'desconto';
+}) {
   return (
     <ol className="divide-y divide-line rounded-2xl border border-line">
       {produtos.map((p, i) => (
         <li key={p.id}>
           <Link
             href={`/produto/${p.id}`}
-            className="flex items-center gap-4 px-4 py-3 transition-colors hover:bg-bg-raised/40"
+            className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-bg-raised/40 sm:gap-4"
           >
-            <span className="mono-num w-6 shrink-0 text-right text-ink-faint">{i + 1}</span>
+            <span className="mono-num w-5 shrink-0 text-right text-ink-faint sm:w-6">{i + 1}</span>
             <img
               src={p.imagemUrl}
               alt=""
@@ -25,7 +41,7 @@ export function RankingList({ produtos }: { produtos: Produto[] }) {
               <p className="mono-num text-xs text-ink-secondary">{formatarPreco(p.precoAtual)}</p>
             </div>
             <span className="mono-num shrink-0 rounded-full border border-accent/30 bg-accent/10 px-2.5 py-1 text-xs text-accent">
-              {p.dropScore}
+              {badgeDoItem(p, variante)}
             </span>
           </Link>
         </li>
