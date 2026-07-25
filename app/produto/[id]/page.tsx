@@ -5,7 +5,8 @@ import { Footer } from '@/components/Footer';
 import { ProductCard } from '@/components/ProductCard';
 import { PriceHistoryChart } from '@/components/PriceHistoryChart';
 import { AlertaProdutoInline } from '@/components/AlertaProdutoInline';
-import { buscarProdutoPorId, buscarSemelhantes, produtoENovo, produtoPoucoVendido } from '@/lib/produtos';
+import { buscarProdutoPorId, buscarSemelhantes } from '@/lib/produtos';
+import { produtoENovo, produtoPoucoVendido } from '@/lib/produto-badges';
 
 export const revalidate = 60;
 
