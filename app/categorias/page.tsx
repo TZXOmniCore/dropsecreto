@@ -18,7 +18,8 @@ export default async function CategoriasPage() {
       <div className="mx-auto max-w-7xl px-6 py-12">
         <h1 className="font-display text-2xl font-bold text-ink-primary">Categorias</h1>
         <p className="mt-2 text-sm text-ink-secondary">
-          Só aparecem aqui categorias que já têm pelo menos uma oferta aprovada pelo Drop Score.
+          Categorias disponíveis na loja — algumas ainda podem não ter nenhuma oferta aprovada
+          pelo Drop Score no momento.
         </p>
 
         {categorias.length === 0 ? (

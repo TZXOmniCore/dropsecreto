@@ -23,10 +23,6 @@ export function ScannerHero({ top3 }: { top3: Produto[] }) {
     <section className="relative overflow-hidden border-b border-line">
       <div className="mx-auto grid max-w-7xl gap-10 px-6 py-14 md:grid-cols-2 md:py-20 lg:gap-12 lg:py-28">
         <div className="flex flex-col justify-center">
-          <span className="mb-4 inline-flex w-fit items-center gap-2 rounded-full border border-line px-3 py-1 text-xs text-ink-secondary">
-            <span className="h-1.5 w-1.5 rounded-full bg-accent" />
-            motor de análise ativo
-          </span>
           <h1 className="font-display text-3xl font-bold leading-[1.05] text-ink-primary sm:text-4xl md:text-5xl">
             A internet promete desconto.
             <br />
@@ -85,9 +81,16 @@ export function ScannerHero({ top3 }: { top3: Produto[] }) {
                   href={`/produto/${p.id}`}
                   className="flex items-center justify-between gap-3 rounded-xl border border-accent/40 bg-accent/5 px-4 py-3 transition-colors hover:bg-accent/10"
                 >
-                  <div className="min-w-0">
-                    <p className="truncate text-sm text-ink-primary">{p.nome}</p>
-                    <p className="mono-num text-xs text-ink-faint">{formatarPreco(p.precoAtual)}</p>
+                  <div className="flex min-w-0 items-center gap-3">
+                    <img
+                      src={p.imagemUrl}
+                      alt=""
+                      className="h-10 w-10 shrink-0 rounded-lg bg-bg-raised object-cover"
+                    />
+                    <div className="min-w-0">
+                      <p className="truncate text-sm text-ink-primary">{p.nome}</p>
+                      <p className="mono-num text-xs text-ink-faint">{formatarPreco(p.precoAtual)}</p>
+                    </div>
                   </div>
                   <div className="flex shrink-0 items-center gap-2 rounded-full bg-accent/10 px-3 py-1">
                     <span className="mono-num text-sm font-medium text-accent">

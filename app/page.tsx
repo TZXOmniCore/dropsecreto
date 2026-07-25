@@ -13,20 +13,18 @@ import {
   buscarTopOfertas,
   buscarFlashDeals,
   buscarUltimasQuedas,
-  buscarRankingPorDesconto,
   buscarTop3MaioresDescontos,
 } from '@/lib/produtos';
 
 export const revalidate = 60; // atualiza a home a cada 60s
 
 export default async function HomePage() {
-  const [categorias, topOfertas, flashDeals, ultimasQuedas, ranking, top3Descontos] =
+  const [categorias, topOfertas, flashDeals, ultimasQuedas, top3Descontos] =
     await Promise.all([
       buscarCategorias(),
       buscarTopOfertas(12),
       buscarFlashDeals(4),
       buscarUltimasQuedas(3),
-      buscarRankingPorDesconto('dia', 10),
       buscarTop3MaioresDescontos(),
     ]);
 
@@ -68,28 +66,12 @@ export default async function HomePage() {
           </section>
         )}
 
-        {(ultimasQuedas.length > 0 || ranking.length > 0) && (
-          <section className="grid gap-10 py-6 md:grid-cols-[2fr,1fr]">
-            {ultimasQuedas.length > 0 && (
-              <div>
-                <h2 className="mb-5 font-display text-xl font-bold text-ink-primary">
-                  Últimas quedas de preço
-                </h2>
-                <RankingList produtos={ultimasQuedas} variante="desconto" />
-              </div>
-            )}
-
-            {ranking.length > 0 && (
-              <div>
-                <div className="mb-5 flex items-center justify-between gap-3">
-                  <h2 className="font-display text-xl font-bold text-ink-primary">Ranking do Dia</h2>
-                  <Link href="/ranking" className="shrink-0 text-sm text-accent transition-opacity hover:opacity-80">
-                    ver tudo →
-                  </Link>
-                </div>
-                <RankingList produtos={ranking} variante="desconto" />
-              </div>
-            )}
+        {ultimasQuedas.length > 0 && (
+          <section className="py-6">
+            <h2 className="mb-5 font-display text-xl font-bold text-ink-primary">
+              Últimas quedas de preço
+            </h2>
+            <RankingList produtos={ultimasQuedas} variante="desconto" truncarNomeMobile />
           </section>
         )}
       </div>

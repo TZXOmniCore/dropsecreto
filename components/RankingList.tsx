@@ -15,12 +15,21 @@ function badgeDoItem(p: Produto, variante: 'score' | 'desconto') {
   return `${p.dropScore} score`;
 }
 
+// Resume o nome do produto com "..." no final — usado no mobile pra evitar
+// que nome muito longo empurre o badge de desconto pra fora da tela.
+function truncarNome(nome: string, max = 28) {
+  if (nome.length <= max) return nome;
+  return `${nome.slice(0, max).trimEnd()}...`;
+}
+
 export function RankingList({
   produtos,
   variante = 'score',
+  truncarNomeMobile = false,
 }: {
   produtos: Produto[];
   variante?: 'score' | 'desconto';
+  truncarNomeMobile?: boolean;
 }) {
   return (
     <ol className="divide-y divide-line rounded-2xl border border-line">
@@ -37,7 +46,16 @@ export function RankingList({
               className="h-12 w-12 shrink-0 rounded-lg bg-bg-raised object-cover"
             />
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm text-ink-primary">{p.nome}</p>
+              <p className="truncate text-sm text-ink-primary">
+                {truncarNomeMobile ? (
+                  <>
+                    <span className="sm:hidden">{truncarNome(p.nome)}</span>
+                    <span className="hidden sm:inline">{p.nome}</span>
+                  </>
+                ) : (
+                  p.nome
+                )}
+              </p>
               <p className="mono-num text-xs text-ink-secondary">{formatarPreco(p.precoAtual)}</p>
             </div>
             <span className="mono-num shrink-0 rounded-full border border-accent/30 bg-accent/10 px-2.5 py-1 text-xs text-accent">

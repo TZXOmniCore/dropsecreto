@@ -54,37 +54,9 @@ export function ProductCard({ produto }: { produto: Produto }) {
 
   return (
     <Link href={`/produto/${produto.id}`} className="group block">
-      {/* Celular: linha resumida (sem imagem grande, sem gráfico) — a pessoa
-          clica pra ver a página completa do produto. A partir de sm:, vira o
-          card completo de sempre. */}
-      <div className="glass flex items-center gap-3 rounded-2xl p-3 shadow-card sm:hidden">
-        <img
-          src={produto.imagemUrl}
-          alt=""
-          className="h-14 w-14 shrink-0 rounded-lg bg-bg-raised object-cover"
-        />
-        <div className="min-w-0 flex-1">
-          <h3 className="truncate text-sm text-ink-primary">{produto.nome}</h3>
-          <div className="mt-0.5 flex items-baseline gap-2">
-            <span className="mono-num text-sm font-semibold text-ink-primary">
-              {formatarPreco(produto.precoAtual)}
-            </span>
-            {produto.precoAntigo && (
-              <span className="mono-num text-[11px] text-ink-faint line-through">
-                {formatarPreco(produto.precoAntigo)}
-              </span>
-            )}
-          </div>
-        </div>
-        {desconto > 0 && (
-          <span className="mono-num shrink-0 rounded-full bg-accent/10 px-2 py-1 text-xs font-medium text-accent">
-            -{desconto}%
-          </span>
-        )}
-      </div>
-
-      {/* Card completo (tablet/desktop, sm: pra cima) */}
-      <div className="glass hidden flex-col gap-3 rounded-2xl p-4 shadow-card transition-transform sm:flex sm:group-hover:-translate-y-0.5 sm:group-hover:border-accent/30">
+      {/* Card completo em todas as telas — mobile igual ao desktop
+          (quadradinho com foto, nome, preço e infos embaixo). */}
+      <div className="glass flex flex-col gap-3 rounded-2xl p-4 shadow-card transition-transform group-hover:-translate-y-0.5 group-hover:border-accent/30">
         <div className="relative overflow-hidden rounded-xl bg-bg-raised">
           <img
             src={produto.imagemUrl}

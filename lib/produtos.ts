@@ -111,29 +111,52 @@ function mapearProduto(row: ProdutoRow): Produto {
 
 // --- Categorias ---
 
-// Só traz categorias que têm pelo menos uma oferta aprovada — evita chip
-// de categoria vazia que leva pra uma página sem produto nenhum. O join
-// "produtos!inner" já restringe às categorias com pelo menos 1 produto
-// visível (a RLS de produtos, aprovado+ativo, se aplica aqui também), e
-// aproveitamos o array embutido pra contar quantos produtos tem em cada uma.
+// Categorias padrão da loja — usadas como fallback enquanto a tabela
+// "categorias" ainda não está populada no banco (ou não tem nenhuma oferta
+// aprovada ainda), pra aba Categorias nunca aparecer vazia.
+const CATEGORIAS_PADRAO: Categoria[] = [
+  { id: 'fallback-celulares', nome: 'Celulares', slug: 'celulares', quantidadeProdutos: 0 },
+  { id: 'fallback-informatica', nome: 'Informática', slug: 'informatica', quantidadeProdutos: 0 },
+  { id: 'fallback-ssd', nome: 'SSD', slug: 'ssd', quantidadeProdutos: 0 },
+  { id: 'fallback-memoria-ram', nome: 'Memória RAM', slug: 'memoria-ram', quantidadeProdutos: 0 },
+  { id: 'fallback-notebook', nome: 'Notebook', slug: 'notebook', quantidadeProdutos: 0 },
+  { id: 'fallback-monitor', nome: 'Monitor', slug: 'monitor', quantidadeProdutos: 0 },
+  { id: 'fallback-gamer', nome: 'Gamer', slug: 'gamer', quantidadeProdutos: 0 },
+  { id: 'fallback-ferramentas', nome: 'Ferramentas', slug: 'ferramentas', quantidadeProdutos: 0 },
+  { id: 'fallback-casa', nome: 'Casa', slug: 'casa', quantidadeProdutos: 0 },
+  { id: 'fallback-cozinha', nome: 'Cozinha', slug: 'cozinha', quantidadeProdutos: 0 },
+  { id: 'fallback-beleza', nome: 'Beleza', slug: 'beleza', quantidadeProdutos: 0 },
+  { id: 'fallback-moda', nome: 'Moda', slug: 'moda', quantidadeProdutos: 0 },
+  { id: 'fallback-carro', nome: 'Carro', slug: 'carro', quantidadeProdutos: 0 },
+  { id: 'fallback-pets', nome: 'Pets', slug: 'pets', quantidadeProdutos: 0 },
+  { id: 'fallback-criancas', nome: 'Crianças', slug: 'criancas', quantidadeProdutos: 0 },
+  { id: 'fallback-smart-home', nome: 'Smart Home', slug: 'smart-home', quantidadeProdutos: 0 },
+];
+
+// Traz as categorias ativas (join comum, não mais "!inner") pra categoria
+// aparecer mesmo com 0 oferta aprovada ainda — só não mostra produto nenhum
+// dentro dela até o motor aprovar algo. Se o banco ainda não tiver nenhuma
+// categoria cadastrada, cai no fallback padrão da loja.
 export async function buscarCategorias(): Promise<Categoria[]> {
   const { data, error } = await supabase
     .from('categorias')
-    .select('id, nome, slug, produtos!inner(id)')
+    .select('id, nome, slug, produtos(id)')
     .eq('ativa', true)
     .order('ordem', { ascending: true });
 
   if (error) {
     console.error('Erro ao buscar categorias:', error.message);
-    return [];
+    return CATEGORIAS_PADRAO;
   }
 
-  return (data ?? []).map(({ id, nome, slug, produtos }) => ({
+  const categorias = (data ?? []).map(({ id, nome, slug, produtos }) => ({
     id,
     nome,
     slug,
     quantidadeProdutos: Array.isArray(produtos) ? produtos.length : 0,
   }));
+
+  return categorias.length > 0 ? categorias : CATEGORIAS_PADRAO;
 }
 
 // --- Listagens de produto ---

@@ -4,6 +4,7 @@ import { Star, Truck, Store, ShoppingCart, AlertTriangle, CheckCircle2, SearchX 
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { ProductCard } from '@/components/ProductCard';
+import { FavoritarButton } from '@/components/FavoritarButton';
 import { PriceHistoryChart } from '@/components/PriceHistoryChart';
 import { AlertaProdutoInline } from '@/components/AlertaProdutoInline';
 import { buscarProdutoPorId, buscarSemelhantes } from '@/lib/produtos';
@@ -162,12 +163,15 @@ export default async function ProdutoPage({ params }: { params: { id: string } }
               )}
             </div>
 
-            <a href={produto.linkAfiliado}
-              className="mt-8 flex items-center justify-center gap-2 rounded-full bg-accent px-6 py-3.5 text-sm font-semibold text-bg-base transition-opacity hover:opacity-90"
-            >
-              <ShoppingCart className="h-4 w-4" />
-              Comprar na loja
-            </a>
+            <div className="mt-8 flex items-center gap-3">
+              <a href={produto.linkAfiliado}
+                className="flex flex-1 items-center justify-center gap-2 rounded-full bg-accent px-6 py-3.5 text-sm font-semibold text-bg-base transition-opacity hover:opacity-90"
+              >
+                <ShoppingCart className="h-4 w-4" />
+                Comprar na loja
+              </a>
+              <FavoritarButton produtoId={produto.id} />
+            </div>
             <p className="mt-2 text-center text-[11px] text-ink-faint">
               Você será redirecionado para a loja. Como afiliados, podemos receber comissão.
             </p>

@@ -19,9 +19,10 @@ export function Navbar() {
     <header className="sticky top-0 z-50 glass">
       <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-4 px-4 py-3 sm:gap-6 sm:px-6 sm:py-4">
         <a href="/" className="flex items-center gap-2 shrink-0">
-          <span className="h-2 w-2 rounded-full bg-accent shadow-glow" />
-          <span className="font-display text-lg font-bold tracking-tight text-ink-primary">
-            Drop Secreto
+          <span className="h-2 w-2 shrink-0 rounded-full bg-accent shadow-glow" />
+          <span className="font-display text-lg font-bold leading-[1.05] tracking-tight">
+            <span className="block text-ink-primary">Drop</span>
+            <span className="block text-accent">Secreto</span>
           </span>
         </a>
 
