@@ -1,44 +1,53 @@
+import Link from 'next/link';
 import { Navbar } from '@/components/Navbar';
 import { ScannerHero } from '@/components/ScannerHero';
-import { TrustBar } from '@/components/TrustBar';
-import { HowItWorks } from '@/components/HowItWorks';
 import { CategoryChips } from '@/components/CategoryChips';
 import { ProductCard } from '@/components/ProductCard';
 import { FlashDeals } from '@/components/FlashDeals';
 import { RankingList } from '@/components/RankingList';
 import { Footer } from '@/components/Footer';
-// HowItWorks agora renderiza mais abaixo na página (perto do fim) — em celular
-// ela empurrava a vitrine de produtos pra baixo da dobra.
+// "Como o Drop Score funciona" agora é uma página própria em /como-funciona
+// (link no botão secundário do ScannerHero) — não mora mais aqui na home.
 import {
   buscarCategorias,
   buscarTopOfertas,
   buscarFlashDeals,
   buscarUltimasQuedas,
-  buscarRankingDoDia,
+  buscarRankingPorDesconto,
+  buscarTop3MaioresDescontos,
 } from '@/lib/produtos';
 
 export const revalidate = 60; // atualiza a home a cada 60s
 
 export default async function HomePage() {
-  const [categorias, topOfertas, flashDeals, ultimasQuedas, ranking] = await Promise.all([
-    buscarCategorias(),
-    buscarTopOfertas(12),
-    buscarFlashDeals(4),
-    buscarUltimasQuedas(3),
-    buscarRankingDoDia(10),
-  ]);
+  const [categorias, topOfertas, flashDeals, ultimasQuedas, ranking, top3Descontos] =
+    await Promise.all([
+      buscarCategorias(),
+      buscarTopOfertas(12),
+      buscarFlashDeals(4),
+      buscarUltimasQuedas(3),
+      buscarRankingPorDesconto('dia', 10),
+      buscarTop3MaioresDescontos(),
+    ]);
 
   return (
     <main>
       <Navbar />
-      <ScannerHero />
-      <TrustBar />
+      <ScannerHero top3={top3Descontos} />
 
       <div className="mx-auto max-w-7xl px-6">
         <CategoryChips categorias={categorias} />
 
         <section id="ofertas" className="py-6">
-          <h2 className="mb-5 font-display text-xl font-bold text-ink-primary">Top Ofertas</h2>
+          <div className="mb-5 flex items-center justify-between gap-3">
+            <h2 className="font-display text-xl font-bold text-ink-primary">Top Ofertas</h2>
+            <Link
+              href="/produtos"
+              className="shrink-0 text-sm text-accent transition-opacity hover:opacity-80"
+            >
+              Ver todos →
+            </Link>
+          </div>
           {topOfertas.length === 0 ? (
             <div className="glass rounded-2xl p-10 text-center text-sm text-ink-secondary">
               Nenhuma oferta aprovada ainda. O Motor de Drop Score está analisando os produtos
@@ -76,15 +85,18 @@ export default async function HomePage() {
 
             {ranking.length > 0 && (
               <div>
-                <h2 className="mb-5 font-display text-xl font-bold text-ink-primary">Ranking do Dia</h2>
-                <RankingList produtos={ranking} />
+                <div className="mb-5 flex items-center justify-between gap-3">
+                  <h2 className="font-display text-xl font-bold text-ink-primary">Ranking do Dia</h2>
+                  <Link href="/ranking" className="shrink-0 text-sm text-accent transition-opacity hover:opacity-80">
+                    ver tudo →
+                  </Link>
+                </div>
+                <RankingList produtos={ranking} variante="desconto" />
               </div>
             )}
           </section>
         )}
       </div>
-
-      <HowItWorks />
 
       <Footer />
     </main>
