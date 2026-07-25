@@ -1,5 +1,6 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Bricolage_Grotesque, IBM_Plex_Sans, IBM_Plex_Mono } from 'next/font/google';
+import { PwaRegister } from '@/components/PwaRegister';
 import './globals.css';
 
 // Três papéis tipográficos deliberados:
@@ -29,12 +30,28 @@ export const metadata: Metadata = {
   title: 'Drop Secreto — Radar Inteligente de Ofertas',
   description:
     'Todo produto aqui passou por uma análise automática de preço, avaliação, vendas e histórico. O resto, a gente descarta.',
+  manifest: '/manifest.json',
+  icons: {
+    icon: '/icon-192.png',
+    apple: '/icon-192.png',
+  },
+};
+
+// display: 'standalone' (no manifest.json) + isto aqui é o que faz o site
+// poder ser instalado como app no celular e no desktop.
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  themeColor: '#0A0A0B',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="pt-BR" className={`${display.variable} ${body.variable} ${mono.variable}`}>
-      <body>{children}</body>
+      <body>
+        {children}
+        <PwaRegister />
+      </body>
     </html>
   );
 }
