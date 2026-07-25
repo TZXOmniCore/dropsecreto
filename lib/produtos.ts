@@ -26,6 +26,7 @@ const CAMPOS_PRODUTO = `
   avaliacao,
   link_afiliado,
   cupom_id,
+  importado_em,
   categorias ( slug ),
   lojas ( nome, loja_oficial ),
   historico_precos ( preco, registrado_em )
@@ -54,6 +55,7 @@ interface ProdutoRow {
   avaliacao: number | null;
   link_afiliado: string;
   cupom_id: string | null;
+  importado_em: string;
   categorias: { slug: string } | null;
   lojas: { nome: string; loja_oficial: boolean } | null;
   historico_precos: { preco: number; registrado_em: string }[] | null;
@@ -96,7 +98,27 @@ function mapearProduto(row: ProdutoRow): Produto {
     categoriaSlug: row.categorias?.slug ?? '',
     historico90d,
     linkAfiliado: row.link_afiliado,
+    importadoEm: row.importado_em,
   };
+}
+
+// --- Badges de "produto novo" / "pouco vendido" ---
+// Derivados só de campos que já existem (sem coluna nova no banco):
+// novo = importado há pouco tempo por nós; pouco vendido = quantidade
+// de vendas baixa. Um produto pode ser as duas coisas ao mesmo tempo.
+// Ajustar os números abaixo é o suficiente pra afinar o critério.
+export const DIAS_PRODUTO_NOVO = 7;
+export const VENDAS_PRODUTO_POUCO_VENDIDO = 10;
+
+export function produtoENovo(produto: Pick<Produto, 'importadoEm'>): boolean {
+  if (!produto.importadoEm) return false;
+  const diasDesdeImportacao =
+    (Date.now() - new Date(produto.importadoEm).getTime()) / (1000 * 60 * 60 * 24);
+  return diasDesdeImportacao <= DIAS_PRODUTO_NOVO;
+}
+
+export function produtoPoucoVendido(produto: Pick<Produto, 'quantidadeVendida'>): boolean {
+  return produto.quantidadeVendida < VENDAS_PRODUTO_POUCO_VENDIDO;
 }
 
 // --- Categorias ---
@@ -104,7 +126,8 @@ function mapearProduto(row: ProdutoRow): Produto {
 // Só traz categorias que têm pelo menos uma oferta aprovada — evita chip
 // de categoria vazia que leva pra uma página sem produto nenhum. O join
 // "produtos!inner" já restringe às categorias com pelo menos 1 produto
-// visível (a RLS de produtos, aprovado+ativo, se aplica aqui também).
+// visível (a RLS de produtos, aprovado+ativo, se aplica aqui também), e
+// aproveitamos o array embutido pra contar quantos produtos tem em cada uma.
 export async function buscarCategorias(): Promise<Categoria[]> {
   const { data, error } = await supabase
     .from('categorias')
@@ -117,7 +140,12 @@ export async function buscarCategorias(): Promise<Categoria[]> {
     return [];
   }
 
-  return (data ?? []).map(({ id, nome, slug }) => ({ id, nome, slug }));
+  return (data ?? []).map(({ id, nome, slug, produtos }) => ({
+    id,
+    nome,
+    slug,
+    quantidadeProdutos: Array.isArray(produtos) ? produtos.length : 0,
+  }));
 }
 
 // --- Listagens de produto ---
@@ -131,6 +159,23 @@ export async function buscarTopOfertas(limite = 12): Promise<Produto[]> {
 
   if (error) {
     console.error('Erro ao buscar top ofertas:', error.message);
+    return [];
+  }
+
+  return (data ?? []).map(mapearProduto as any);
+}
+
+// Página "/produtos" (ver todos) — mesmo critério do Top Ofertas da home
+// (drop_score, maior relevância primeiro), só que sem limite curto.
+export async function buscarTodosPorScore(limite = 60): Promise<Produto[]> {
+  const { data, error } = await supabase
+    .from('produtos')
+    .select(CAMPOS_PRODUTO)
+    .order('drop_score', { ascending: false })
+    .limit(limite);
+
+  if (error) {
+    console.error('Erro ao buscar todos os produtos:', error.message);
     return [];
   }
 
@@ -172,11 +217,52 @@ export async function buscarUltimasQuedas(limite = 3): Promise<Produto[]> {
   return (data ?? []).map(mapearProduto as any);
 }
 
-// Ranking do dia: por enquanto deriva direto de produtos.drop_score.
-// Quando o job diário que popula "ranking_diario" existir, trocar
-// esta função pra ler dessa tabela em vez de recalcular na hora.
-export async function buscarRankingDoDia(limite = 20): Promise<Produto[]> {
-  return buscarTopOfertas(limite);
+// Os 3 produtos com maior desconto de toda a plataforma — usado no
+// quadro ao lado do texto de abertura da home.
+export async function buscarTop3MaioresDescontos(): Promise<Produto[]> {
+  const { data, error } = await supabase
+    .from('produtos')
+    .select(CAMPOS_PRODUTO)
+    .order('desconto_percentual', { ascending: false })
+    .limit(3);
+
+  if (error) {
+    console.error('Erro ao buscar top 3 maiores descontos:', error.message);
+    return [];
+  }
+
+  return (data ?? []).map(mapearProduto as any);
+}
+
+// Ranking por desconto (página /ranking). "dia" é o catálogo aprovado
+// atual ordenado por desconto; "mes" restringe a produtos com preço
+// checado nos últimos 30 dias (exclui anúncio parado/desatualizado).
+// OBS: isso ainda não é um snapshot histórico de verdade — quando o job
+// que popula "ranking_diario" existir, dá pra trocar por dados reais
+// de dia/mês em vez de recalcular o catálogo atual toda vez.
+export async function buscarRankingPorDesconto(
+  periodo: 'dia' | 'mes' = 'dia',
+  limite = 20
+): Promise<Produto[]> {
+  let query = supabase
+    .from('produtos')
+    .select(CAMPOS_PRODUTO)
+    .order('desconto_percentual', { ascending: false })
+    .limit(limite);
+
+  if (periodo === 'mes') {
+    const trintaDiasAtras = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+    query = query.gte('atualizado_em', trintaDiasAtras);
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    console.error('Erro ao buscar ranking por desconto:', error.message);
+    return [];
+  }
+
+  return (data ?? []).map(mapearProduto as any);
 }
 
 export async function buscarProdutosPorCategoria(slug: string, limite = 24): Promise<Produto[]> {
@@ -227,6 +313,27 @@ export async function buscarSemelhantes(
 
   if (error) {
     console.error('Erro ao buscar produtos semelhantes:', error.message);
+    return [];
+  }
+
+  return (data ?? []).map(mapearProduto as any);
+}
+
+// Busca por nome (barra de pesquisa da Navbar). Usa ilike, que aproveita
+// o índice gin_trgm já criado em produtos.nome (ver 0001_init.sql).
+export async function buscarProdutosPorNome(termo: string, limite = 30): Promise<Produto[]> {
+  const termoLimpo = termo.trim();
+  if (!termoLimpo) return [];
+
+  const { data, error } = await supabase
+    .from('produtos')
+    .select(CAMPOS_PRODUTO)
+    .ilike('nome', `%${termoLimpo}%`)
+    .order('drop_score', { ascending: false })
+    .limit(limite);
+
+  if (error) {
+    console.error('Erro ao buscar produtos por nome:', error.message);
     return [];
   }
 

@@ -15,10 +15,12 @@ export interface Produto {
   categoriaSlug: string;
   historico90d: number[];
   linkAfiliado: string;
+  importadoEm: string;
 }
 
 export interface Categoria {
   id: string;
   nome: string;
   slug: string;
+  quantidadeProdutos?: number;
 }
