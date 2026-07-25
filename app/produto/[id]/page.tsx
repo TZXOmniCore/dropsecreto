@@ -1,10 +1,11 @@
 import { notFound } from 'next/navigation';
-import { Star, Truck, Store, ShoppingCart } from 'lucide-react';
+import { Star, Truck, Store, ShoppingCart, Sparkles, AlertTriangle } from 'lucide-react';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { ProductCard } from '@/components/ProductCard';
 import { PriceHistoryChart } from '@/components/PriceHistoryChart';
-import { buscarProdutoPorId, buscarSemelhantes } from '@/lib/produtos';
+import { AlertaProdutoInline } from '@/components/AlertaProdutoInline';
+import { buscarProdutoPorId, buscarSemelhantes, produtoENovo, produtoPoucoVendido } from '@/lib/produtos';
 
 export const revalidate = 60;
 
@@ -22,6 +23,8 @@ export default async function ProdutoPage({ params }: { params: { id: string } }
   const economiaPercentual = produto.precoAntigo
     ? Math.round((economiaReais / produto.precoAntigo) * 100)
     : 0;
+  const eNovo = produtoENovo(produto);
+  const ePoucoVendido = produtoPoucoVendido(produto);
 
   return (
     <main>
@@ -45,6 +48,15 @@ export default async function ProdutoPage({ params }: { params: { id: string } }
             >
               {produto.dropScore} score · {produto.classificacao}
             </span>
+
+            {(eNovo || ePoucoVendido) && (
+              <span className="mt-2 flex w-fit items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-xs text-amber-400">
+                {eNovo ? <Sparkles className="h-3.5 w-3.5" /> : <AlertTriangle className="h-3.5 w-3.5" />}
+                {eNovo
+                  ? 'produto novo na plataforma — ainda sem histórico de vendas próprio'
+                  : 'poucas vendas registradas até agora'}
+              </span>
+            )}
 
             <h1 className="mt-3 font-display text-2xl font-bold text-ink-primary">{produto.nome}</h1>
 
@@ -101,6 +113,8 @@ export default async function ProdutoPage({ params }: { params: { id: string } }
             <p className="mt-2 text-center text-[11px] text-ink-faint">
               Você será redirecionado para a loja. Como afiliados, podemos receber comissão.
             </p>
+
+            <AlertaProdutoInline nomeProduto={produto.nome} precoAtual={produto.precoAtual} />
           </div>
         </div>
 
@@ -118,13 +132,6 @@ export default async function ProdutoPage({ params }: { params: { id: string } }
             </div>
           </div>
         )}
-
-        <div className="mt-12">
-          <h2 className="mb-5 font-display text-xl font-bold text-ink-primary">Comentários</h2>
-          <div className="glass rounded-2xl p-8 text-center text-sm text-ink-secondary">
-            Ainda não há comentários para este produto.
-          </div>
-        </div>
       </div>
 
       <Footer />
