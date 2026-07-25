@@ -1,6 +1,11 @@
 // ============================================================
 // DROP SECRETO — Motor de Drop Score (módulo compartilhado)
 // Importado pela função calcular-drop-score. Ver supabase/functions/README.md
+//
+// A página "/como-funciona" do site (Next.js) importa PESOS e os limiares
+// de aprovação diretamente deste arquivo, pra nunca ficar com texto
+// desatualizado em relação ao que o motor realmente faz. Se mudar um peso
+// ou limiar aqui, a página muda sozinha — não precisa editar em dois lugares.
 // ============================================================
 
 export interface PontoHistorico {
@@ -13,12 +18,13 @@ export interface ProdutoParaAnalise {
   precoAntigo?: number | null;
   freteGratis: boolean;
   valorFrete?: number | null;
-  avaliacao: number;              // 0 a 5
+  avaliacao: number;              // 0 a 5 (0 = produto ainda sem nenhuma avaliação)
   quantidadeAvaliacoes: number;
   quantidadeVendida: number;
   temCupomAtivo: boolean;
   lojaOficial: boolean;
   lojaConfiabilidade: number;     // 0 a 100, calculado previamente para a loja
+  lojaAvaliacaoMedia: number;     // 0 a 5, nota da loja na Shopee
   lojaSuspeita: boolean;
   historicoPrecos: PontoHistorico[]; // idealmente últimos 90 dias
 }
@@ -43,7 +49,12 @@ export interface ResultadoAnalise {
   };
 }
 
-const PESOS = {
+// Pesos do Drop Score. A partir da revisão de julho/2026, o dropScore passou
+// a ser só um número de RELEVÂNCIA/ordenação — não decide mais sozinho se um
+// produto é aprovado ou não. Quem decide aprovação agora são os limiares de
+// nota (LIMIAR_*) logo abaixo, porque um produto novo/pouco vendido pode ter
+// dropScore baixo (pouca prova de venda) sem por isso ser um produto ruim.
+export const PESOS = {
   desconto: 0.20,
   historicoPreco: 0.20,
   avaliacao: 0.15,
@@ -53,7 +64,16 @@ const PESOS = {
   cupom: 0.07,
 } as const;
 
-const LIMIAR_APROVACAO = 50;
+// --- Limiares de aprovação (o que de fato barra um produto do site) ---
+// Loja com nota abaixo disso nunca aparece no site, não importa o resto.
+export const LIMIAR_NOTA_LOJA = 3.5;
+// Produto que já tem avaliação, mas ela é baixa, é rejeitado.
+export const LIMIAR_NOTA_PRODUTO = 2.5;
+// Produto sem nenhuma avaliação ainda (comum em item novo/pouco vendido) só
+// é aprovado se a loja tiver nota alta o suficiente pra compensar a falta
+// de prova social do produto em si.
+export const LIMIAR_NOTA_LOJA_PRODUTO_SEM_AVALIACAO = 3.9;
+
 const FATOR_INFLACAO_SUSPEITA = 1.15; // "de" > 15% acima do maior preço já visto = suspeito
 
 function scoreDesconto(precoAtual: number, precoAntigo?: number | null): number {
@@ -98,8 +118,12 @@ function scoreAvaliacao(avaliacao: number, quantidadeAvaliacoes: number): number
   return base * fatorConfianca;
 }
 
+// Produto sem nenhuma venda ainda pontua baixo (não zero) — ele não é mais
+// descartado só por isso, mas naturalmente fica atrás de quem já vendeu e
+// tem prova real. É esse número que faz um produto novo aparecer numa
+// vitrine separada em vez de competir de igual pra igual no topo do ranking.
 function scoreVendas(quantidadeVendida: number): number {
-  if (quantidadeVendida <= 0) return 0;
+  if (quantidadeVendida <= 0) return 30;
   return Math.min(100, (Math.log10(quantidadeVendida + 1) / Math.log10(10000)) * 100);
 }
 
@@ -127,18 +151,45 @@ function classificar(dropScore: number): Classificacao {
   return 'Ruim';
 }
 
-export function calcularDropScore(produto: ProdutoParaAnalise): ResultadoAnalise {
+// Decide se o produto pode aparecer no site. Isso NÃO depende mais do
+// dropScore — depende só de nota (produto/loja) e de sinal de fraude.
+// Um produto novo, sem venda nenhuma, passa aqui numa boa desde que a loja
+// seja confiável; um produto "veterano" mas com nota ruim, não passa.
+function avaliarAprovacao(
+  produto: ProdutoParaAnalise,
+  promocaoVerificada: boolean | null
+): { aprovado: boolean; motivo?: string } {
   if (produto.lojaSuspeita) {
+    return { aprovado: false, motivo: 'Loja marcada como suspeita' };
+  }
+
+  if (promocaoVerificada === false) {
     return {
-      dropScore: 0,
-      classificacao: 'Ruim',
-      promocaoVerificada: null,
-      status: 'rejeitado',
-      motivoRejeicao: 'Loja marcada como suspeita',
-      subScores: { desconto: 0, historicoPreco: 0, avaliacao: 0, vendas: 0, loja: 0, frete: 0, cupom: 0 },
+      aprovado: false,
+      motivo: 'Desconto aparenta ser inflado (preço "de" muito acima do maior preço já registrado)',
     };
   }
 
+  const notaLoja = produto.lojaAvaliacaoMedia ?? 0;
+  if (notaLoja > 0 && notaLoja < LIMIAR_NOTA_LOJA) {
+    return { aprovado: false, motivo: `Loja com nota abaixo de ${LIMIAR_NOTA_LOJA} estrelas` };
+  }
+
+  if (produto.avaliacao > 0 && produto.avaliacao < LIMIAR_NOTA_PRODUTO) {
+    return { aprovado: false, motivo: `Produto com nota abaixo de ${LIMIAR_NOTA_PRODUTO} estrelas` };
+  }
+
+  if (produto.avaliacao <= 0 && notaLoja < LIMIAR_NOTA_LOJA_PRODUTO_SEM_AVALIACAO) {
+    return {
+      aprovado: false,
+      motivo: `Produto ainda sem avaliação — só é aprovado direto se a loja tiver nota ${LIMIAR_NOTA_LOJA_PRODUTO_SEM_AVALIACAO}+ (esta loja tem ${notaLoja || 'nenhuma'})`,
+    };
+  }
+
+  return { aprovado: true };
+}
+
+export function calcularDropScore(produto: ProdutoParaAnalise): ResultadoAnalise {
   const { score: scoreHist, promocaoVerificada } = analisarHistorico(
     produto.precoAtual,
     produto.precoAntigo,
@@ -170,18 +221,14 @@ export function calcularDropScore(produto: ProdutoParaAnalise): ResultadoAnalise
 
   dropScore = Math.round(dropScore * 100) / 100;
 
-  const aprovado = dropScore >= LIMIAR_APROVACAO && promocaoVerificada !== false;
+  const { aprovado, motivo } = avaliarAprovacao(produto, promocaoVerificada);
 
   return {
     dropScore,
     classificacao: classificar(dropScore),
     promocaoVerificada,
     status: aprovado ? 'aprovado' : 'rejeitado',
-    motivoRejeicao: aprovado
-      ? undefined
-      : promocaoVerificada === false
-      ? 'Desconto aparenta ser inflado (preço "de" muito acima do maior preço já registrado)'
-      : `Drop Score abaixo do limiar de aprovação (${LIMIAR_APROVACAO})`,
+    motivoRejeicao: motivo,
     subScores,
   };
 }

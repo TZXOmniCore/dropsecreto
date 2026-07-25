@@ -27,7 +27,7 @@ Deno.serve(async () => {
   const { data: produtos, error: erroSelect } = await supabase
     .from('produtos')
     .select(
-      '*, lojas(loja_oficial, confiabilidade_score, suspeita), historico_precos(preco, registrado_em)'
+      '*, lojas(loja_oficial, confiabilidade_score, avaliacao_media, suspeita), historico_precos(preco, registrado_em)'
     )
     .eq('status', 'pendente')
     .limit(LOTE_POR_EXECUCAO);
@@ -57,6 +57,7 @@ Deno.serve(async () => {
       temCupomAtivo: !!p.cupom_id,
       lojaOficial: p.lojas?.loja_oficial ?? false,
       lojaConfiabilidade: p.lojas?.confiabilidade_score ?? 50,
+      lojaAvaliacaoMedia: p.lojas?.avaliacao_media ?? 0,
       lojaSuspeita: p.lojas?.suspeita ?? false,
       historicoPrecos: p.historico_precos ?? [],
     });
