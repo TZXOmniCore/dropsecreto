@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Heart } from 'lucide-react';
+import { Heart, Sparkles, AlertTriangle } from 'lucide-react';
 import type { Produto } from '@/lib/types';
 import { ehFavorito, alternarFavorito } from '@/lib/favorites';
+import { produtoENovo, produtoPoucoVendido } from '@/lib/produtos';
 
 function formatarPreco(valor: number) {
   return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -61,6 +62,9 @@ export function ProductCard({ produto }: { produto: Produto }) {
     ? Math.round(((produto.precoAntigo - produto.precoAtual) / produto.precoAntigo) * 100)
     : 0;
 
+  const eNovo = produtoENovo(produto);
+  const ePoucoVendido = produtoPoucoVendido(produto);
+
   return (
     <Link
       href={`/produto/${produto.id}`}
@@ -114,6 +118,12 @@ export function ProductCard({ produto }: { produto: Produto }) {
         <Sparkline dados={produto.historico90d} />
 
         <div className="flex flex-wrap gap-1.5 text-[11px] text-ink-secondary">
+          {(eNovo || ePoucoVendido) && (
+            <span className="flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-amber-400">
+              {eNovo ? <Sparkles className="h-3 w-3" /> : <AlertTriangle className="h-3 w-3" />}
+              {eNovo ? 'produto novo' : 'poucas vendas'}
+            </span>
+          )}
           {produto.lojaOficial && (
             <span className="rounded-full border border-line px-2 py-0.5">loja oficial</span>
           )}
