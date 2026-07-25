@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { Heart, Sparkles, AlertTriangle } from 'lucide-react';
 import type { Produto } from '@/lib/types';
 import { ehFavorito, alternarFavorito } from '@/lib/favorites';
-import { produtoENovo, produtoPoucoVendido } from '@/lib/produtos';
+import { produtoENovo, produtoPoucoVendido } from '@/lib/produto-badges';
 
 function formatarPreco(valor: number) {
   return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
