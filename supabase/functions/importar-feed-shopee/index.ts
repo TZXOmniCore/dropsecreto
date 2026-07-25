@@ -4,21 +4,33 @@
 // os produtos como "pendente" para o Motor de Drop Score analisar depois.
 // Pensado para rodar como Supabase Edge Function (Deno/TypeScript).
 //
+// CORREÇÕES NESTA VERSÃO:
+// 1) PAGINAÇÃO: a query não pedia "pageInfo" e o contador de página
+//    começava em 0. A doc da Shopee mostra "page" com padrão 1 — com
+//    page=0 a API provavelmente sempre devolvia a página 1, por isso
+//    vinha sempre o mesmo lote. Corrigido: page começa em 1 e agora lemos
+//    pageInfo{page,limit,hasNextPage} pra saber de verdade quando parar.
+// 2) PROGRESSO ENTRE EXECUÇÕES: o Supabase corta a função em 150s (vale
+//    pro free E pro pago — é o "request idle timeout"), então não dá pra
+//    trazer o catálogo inteiro numa chamada só. Agora a função salva em
+//    qual página parou (tabela import_estado, SQL no final) e a próxima
+//    execução continua dali. Ao chegar no fim do feed, volta pra página 1
+//    (o upsert por shopee_item_id evita duplicar).
+// 3) PARALELIZAÇÃO: busca de nota de loja nova (shopOfferV2) e gravação
+//    de produtos agora rodam em paralelo (até 8 por vez), não mais um de
+//    cada vez — isso é o que mais pesava no tempo total.
+// 4) CATEGORIA: o productOfferV2 NÃO tem parâmetro de categoria (não dá
+//    pra filtrar por nicho nessa API) — o "categoria_id" aqui é só rótulo
+//    de navegação do site, não influencia aprovação (isso é 100% do
+//    drop-score-engine, por confiabilidade). Mapeamento de exemplo agora
+//    cobre todos os seus nichos, não só tecnologia.
+//
 // IMPORTANTE — confirme antes de usar em produção:
-// 1) O hostname exato do endpoint para o Brasil (aqui assumido como
-//    open-api.affiliate.shopee.com.br/graphql, seguindo o padrão usado
-//    por outros países — confirme no seu painel de afiliado).
-// 2) O schema completo de productOfferV2/shopOfferV2 pode variar por
-//    conta/região; valide os nomes de campo abaixo com uma chamada de
-//    teste antes de rodar em produção.
-// 3) MAPEAMENTO_CATEGORIAS abaixo está com valores de EXEMPLO — os IDs
-//    reais de categoria da Shopee Brasil ainda precisam ser preenchidos.
-//    Rode uma importação, veja nos logs os productCatIds que aparecerem
-//    pra "categoria sem mapeamento", e complete a tabela.
-// 4) Preço: nas amostras públicas que encontrei, priceMin/priceMax já
-//    vêm em reais normais (ex.: "49.90"), não em centavos — mas os logs
-//    abaixo (LOG_AMOSTRA_PRECO) imprimem os valores brutos dos primeiros
-//    produtos de cada execução pra confirmar isso com dado real de vocês.
+// 1) productCatIds reais da sua conta ainda precisam ser preenchidos no
+//    MAPEAMENTO_CATEGORIAS — rode uma importação, veja nos logs quais
+//    productCatIds aparecem em "categoria sem mapeamento" e complete.
+// 2) LOG_AMOSTRA_PRECO imprime os valores brutos dos primeiros produtos
+//    de cada execução pra confirmar que priceMin já vem em reais normais.
 // ============================================================
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
@@ -30,22 +42,36 @@ const SHOPEE_GRAPHQL_URL = 'https://open-api.affiliate.shopee.com.br/graphql';
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
-// Quantos produtos por página têm o preço bruto impresso no log, só pra
-// conferência manual (ver aviso 4 acima). Não afeta o que é gravado no banco.
+// Folga confortável antes do teto de 150s (request idle timeout do
+// Supabase, vale pros dois planos) — a função sempre retorna limpa em
+// vez de ser cortada no meio.
+const ORCAMENTO_MS = 100_000;
+
 const LOG_AMOSTRA_PRECO = 3;
 
 // Mapeamento Shopee categoryId -> slug interno do Drop Secreto.
 // ⚠️ VALORES DE EXEMPLO — substitua pelos IDs reais da sua conta/região.
-// A Shopee não expõe um endpoint de "lista de categorias" na Affiliate
-// Open API; o jeito prático é rodar a importação, olhar nos logs quais
-// productCatIds aparecem em "categoria sem mapeamento" e completar aqui.
+// A Shopee não expõe endpoint de "lista de categorias"; o jeito prático é
+// rodar a importação, ver nos logs quais productCatIds aparecem em
+// "categoria sem mapeamento" e completar aqui. Cobre TODOS os seus
+// nichos — o site é multi-categoria por definição, não só tecnologia.
 const MAPEAMENTO_CATEGORIAS: Record<number, string> = {
-  // 100001: 'informatica',
-  // 100002: 'perifericos',
-  // 100003: 'casa-inteligente',
-  // 100004: 'celulares',
-  // 100005: 'audio',
-  // 100006: 'games',
+  // 100001: 'celulares',
+  // 100002: 'informatica',
+  // 100003: 'ssd',
+  // 100004: 'memoria-ram',
+  // 100005: 'notebook',
+  // 100006: 'monitor',
+  // 100007: 'gamer',
+  // 100008: 'ferramentas',
+  // 100009: 'casa',
+  // 100010: 'cozinha',
+  // 100011: 'beleza',
+  // 100012: 'moda',
+  // 100013: 'carro',
+  // 100014: 'pets',
+  // 100015: 'criancas',
+  // 100016: 'smart-home',
 };
 
 interface ShopeeOfferNode {
@@ -54,7 +80,7 @@ interface ShopeeOfferNode {
   imageUrl: string;
   priceMin: string;
   priceMax: string;
-  priceDiscountRate: number; // ex.: 10 = 10%
+  priceDiscountRate: number;
   sales: number;
   ratingStar: string;
   commissionRate: string;
@@ -64,18 +90,17 @@ interface ShopeeOfferNode {
   productCatIds: number[];
   shopId: number;
   shopName: string;
-  shopType: number[]; // 1 = Mall/oficial, 2 = Preferred/Star, 4 = Preferred Plus/Star+
+  shopType: number[];
 }
 
-interface ShopeeShopOfferNode {
-  shopId: number;
-  ratingStar: string;
+interface PageInfo {
+  page: number;
+  limit: number;
+  hasNextPage: boolean;
 }
 
 // ------------------------------------------------------------
 // Assinatura HMAC-SHA256 exigida pela Shopee Affiliate Open API
-// Header: Authorization: SHA256 Credential={AppId}, Timestamp={Timestamp}, Signature={Signature}
-// Signature = SHA256(AppId + Timestamp + Payload + Secret), timestamp em segundos Unix
 // ------------------------------------------------------------
 async function assinarRequisicao(payload: string): Promise<HeadersInit> {
   const timestamp = Math.floor(Date.now() / 1000);
@@ -108,11 +133,37 @@ async function chamarGraphQL(query: string, variables: Record<string, unknown>):
 }
 
 // ------------------------------------------------------------
-// Busca uma página de ofertas via productOfferV2.
-// shopId, shopName e shopType vêm de graça aqui — não precisam de uma
-// chamada separada (só a nota da loja em si precisa, ver buscarNotaLoja).
+// Roda uma lista de itens com no máximo `limite` chamadas simultâneas —
+// evita disparar dezenas de requisições de uma vez pra Shopee/Supabase.
 // ------------------------------------------------------------
-async function buscarPaginaDeOfertas(page: number, limit = 50): Promise<ShopeeOfferNode[]> {
+async function mapComLimite<T, R>(
+  itens: T[],
+  limite: number,
+  fn: (item: T, indice: number) => Promise<R>
+): Promise<R[]> {
+  const resultados: R[] = new Array(itens.length);
+  let proximo = 0;
+
+  async function worker() {
+    while (proximo < itens.length) {
+      const indiceAtual = proximo++;
+      resultados[indiceAtual] = await fn(itens[indiceAtual], indiceAtual);
+    }
+  }
+
+  const workers = Array.from({ length: Math.min(limite, itens.length) }, () => worker());
+  await Promise.all(workers);
+  return resultados;
+}
+
+// ------------------------------------------------------------
+// Busca uma página de ofertas via productOfferV2 — agora pedindo
+// pageInfo pra saber de verdade se tem próxima página.
+// ------------------------------------------------------------
+async function buscarPaginaDeOfertas(
+  page: number,
+  limit: number
+): Promise<{ nodes: ShopeeOfferNode[]; pageInfo: PageInfo | null }> {
   const query = `
     query Fetch($page: Int, $limit: Int) {
       productOfferV2(listType: 0, sortType: 2, page: $page, limit: $limit) {
@@ -134,20 +185,22 @@ async function buscarPaginaDeOfertas(page: number, limit = 50): Promise<ShopeeOf
           shopName
           shopType
         }
+        pageInfo {
+          page
+          limit
+          hasNextPage
+        }
       }
     }
   `;
 
   const dados = await chamarGraphQL(query, { page, limit });
-  return dados?.productOfferV2?.nodes ?? [];
+  return {
+    nodes: dados?.productOfferV2?.nodes ?? [],
+    pageInfo: dados?.productOfferV2?.pageInfo ?? null,
+  };
 }
 
-// ------------------------------------------------------------
-// Nota da loja (ratingStar) só vem pelo shopOfferV2, filtrando por
-// shopId — não vem no productOfferV2. Cacheado em memória durante a
-// execução pra não repetir chamada pra loja que já apareceu antes no
-// mesmo lote (várias ofertas costumam ser da mesma loja).
-// ------------------------------------------------------------
 const cacheNotaLoja = new Map<number, number | null>();
 
 async function buscarNotaLoja(shopId: number): Promise<number | null> {
@@ -172,22 +225,11 @@ async function buscarNotaLoja(shopId: number): Promise<number | null> {
   }
 }
 
-// ------------------------------------------------------------
-// A API não expõe um campo direto de "preço antigo"; ele é
-// aproximado a partir do preço atual e do percentual de desconto.
-// ------------------------------------------------------------
 function calcularPrecoAntigoAproximado(precoAtual: number, descontoPercentual: number): number | null {
   if (!descontoPercentual || descontoPercentual <= 0) return null;
   return Math.round((precoAtual / (1 - descontoPercentual / 100)) * 100) / 100;
 }
 
-// ------------------------------------------------------------
-// Categoria interna a partir dos productCatIds da Shopee. Retorna o
-// slug da primeira categoria da lista que tiver mapeamento conhecido.
-// Se nenhuma bater, loga o(s) id(s) pra completar MAPEAMENTO_CATEGORIAS
-// depois, e o produto fica sem categoria por enquanto (não trava a
-// importação, só não aparece em nenhuma página de categoria).
-// ------------------------------------------------------------
 function resolverCategoriaSlug(productCatIds: number[]): string | null {
   for (const catId of productCatIds ?? []) {
     const slug = MAPEAMENTO_CATEGORIAS[catId];
@@ -200,24 +242,28 @@ function resolverCategoriaSlug(productCatIds: number[]): string | null {
 }
 
 // ------------------------------------------------------------
-// Garante que a loja exista e mantém nome/tipo/nota em dia. shopId,
-// shopName e shopType já vêm no próprio productOfferV2 (não precisam
-// de chamada extra); só a nota (ratingStar) exige buscarNotaLoja.
+// Resolve (busca ou cria) a loja de UM shopId. Chamada em paralelo, uma
+// vez por loja única do lote — nunca duas vezes pro mesmo shopId no
+// mesmo lote, então não corre risco de duplicar linha.
 // ------------------------------------------------------------
-async function garantirLoja(supabase: any, node: ShopeeOfferNode): Promise<string | null> {
-  const lojaOficial = node.shopType?.includes(1) ?? false;
-  const notaLoja = await buscarNotaLoja(node.shopId);
+async function garantirLoja(
+  supabase: any,
+  shopId: number,
+  shopName: string,
+  shopOficial: boolean
+): Promise<string | null> {
+  const notaLoja = await buscarNotaLoja(shopId);
 
   const { data: existente } = await supabase
     .from('lojas')
     .select('id')
-    .eq('shopee_shop_id', node.shopId)
+    .eq('shopee_shop_id', shopId)
     .maybeSingle();
 
   const dadosLoja = {
-    nome: node.shopName || `Loja Shopee ${node.shopId}`,
-    shopee_shop_id: node.shopId,
-    loja_oficial: lojaOficial,
+    nome: shopName || `Loja Shopee ${shopId}`,
+    shopee_shop_id: shopId,
+    loja_oficial: shopOficial,
     avaliacao_media: notaLoja,
     confiabilidade_score: 50, // ajustado manualmente por enquanto; ver drop-score-engine
   };
@@ -232,16 +278,33 @@ async function garantirLoja(supabase: any, node: ShopeeOfferNode): Promise<strin
 }
 
 // ------------------------------------------------------------
-// Processa um lote de nós e grava/atualiza em `produtos`
+// Processa um lote: resolve as lojas únicas em paralelo primeiro, depois
+// grava todos os produtos em paralelo (já com o loja_id em mãos).
 // ------------------------------------------------------------
 async function importarLote(
   supabase: any,
   nodes: ShopeeOfferNode[],
   categoriasIdPorSlug: Record<string, string>
 ): Promise<number> {
-  let importados = 0;
+  if (nodes.length === 0) return 0;
 
-  for (const [indice, node] of nodes.entries()) {
+  const lojasUnicas = new Map<number, { shopName: string; shopOficial: boolean }>();
+  for (const node of nodes) {
+    if (!lojasUnicas.has(node.shopId)) {
+      lojasUnicas.set(node.shopId, {
+        shopName: node.shopName,
+        shopOficial: node.shopType?.includes(1) ?? false,
+      });
+    }
+  }
+
+  const lojaIdPorShopId = new Map<number, string | null>();
+  await mapComLimite(Array.from(lojasUnicas.entries()), 8, async ([shopId, info]) => {
+    const lojaId = await garantirLoja(supabase, shopId, info.shopName, info.shopOficial);
+    lojaIdPorShopId.set(shopId, lojaId);
+  });
+
+  await mapComLimite(nodes, 8, async (node, indice) => {
     const precoAtual = parseFloat(node.priceMin);
     const precoAntigo = calcularPrecoAntigoAproximado(precoAtual, node.priceDiscountRate);
 
@@ -256,7 +319,6 @@ async function importarLote(
       });
     }
 
-    const lojaId = await garantirLoja(supabase, node);
     const categoriaSlug = resolverCategoriaSlug(node.productCatIds);
     const categoriaId = categoriaSlug ? categoriasIdPorSlug[categoriaSlug] ?? null : null;
 
@@ -264,7 +326,7 @@ async function importarLote(
       {
         shopee_item_id: node.itemId,
         nome: node.productName,
-        loja_id: lojaId,
+        loja_id: lojaIdPorShopId.get(node.shopId) ?? null,
         categoria_id: categoriaId,
         imagem_principal_url: node.imageUrl,
         preco_atual: precoAtual,
@@ -277,11 +339,28 @@ async function importarLote(
       },
       { onConflict: 'shopee_item_id' }
     );
+  });
 
-    importados++;
-  }
+  return nodes.length;
+}
 
-  return importados;
+// ------------------------------------------------------------
+// Lê/grava em qual página a próxima execução deve continuar.
+// Precisa da tabela import_estado — SQL logo depois do código.
+// ------------------------------------------------------------
+async function lerProximaPagina(supabase: any): Promise<number> {
+  const { data } = await supabase
+    .from('import_estado')
+    .select('proxima_pagina')
+    .eq('id', 1)
+    .maybeSingle();
+  return data?.proxima_pagina ?? 1;
+}
+
+async function salvarProximaPagina(supabase: any, pagina: number) {
+  await supabase
+    .from('import_estado')
+    .upsert({ id: 1, proxima_pagina: pagina, atualizado_em: new Date().toISOString() });
 }
 
 // ------------------------------------------------------------
@@ -290,10 +369,12 @@ async function importarLote(
 // ------------------------------------------------------------
 Deno.serve(async () => {
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+  const inicioMs = Date.now();
+  const inicio = new Date(inicioMs).toISOString();
 
-  const inicio = new Date().toISOString();
   let totalImportados = 0;
-  let pagina = 0;
+  let pagina = 1;
+  let paginasProcessadas = 0;
   const LIMITE_POR_PAGINA = 50;
 
   try {
@@ -302,17 +383,29 @@ Deno.serve(async () => {
       (categorias ?? []).map((c: { id: string; slug: string }) => [c.slug, c.id])
     );
 
-    while (true) {
-      const nodes = await buscarPaginaDeOfertas(pagina, LIMITE_POR_PAGINA);
-      if (nodes.length === 0) break;
+    pagina = await lerProximaPagina(supabase);
+
+    while (Date.now() - inicioMs < ORCAMENTO_MS) {
+      const { nodes, pageInfo } = await buscarPaginaDeOfertas(pagina, LIMITE_POR_PAGINA);
+
+      if (nodes.length === 0) {
+        pagina = 1; // fim do feed — recomeça do início na próxima execução
+        break;
+      }
 
       totalImportados += await importarLote(supabase, nodes, categoriasIdPorSlug);
-      pagina++;
+      paginasProcessadas++;
 
-      // O schema público não confirma um campo pageInfo.hasNextPage;
-      // paramos quando a página vier menor que o limite pedido.
-      if (nodes.length < LIMITE_POR_PAGINA) break;
+      const temProximaPagina = pageInfo?.hasNextPage ?? nodes.length === LIMITE_POR_PAGINA;
+      if (!temProximaPagina) {
+        pagina = 1;
+        break;
+      }
+
+      pagina = (pageInfo?.page ?? pagina) + 1;
     }
+
+    await salvarProximaPagina(supabase, pagina);
 
     await supabase.from('logs_importacao').insert({
       fonte: 'shopee_feed',
@@ -321,7 +414,10 @@ Deno.serve(async () => {
       finalizado_em: new Date().toISOString(),
     });
 
-    return new Response(JSON.stringify({ ok: true, importados: totalImportados }), { status: 200 });
+    return new Response(
+      JSON.stringify({ ok: true, importados: totalImportados, paginasProcessadas, proximaPagina: pagina }),
+      { status: 200 }
+    );
   } catch (erro) {
     await supabase.from('logs_importacao').insert({
       fonte: 'shopee_feed',
