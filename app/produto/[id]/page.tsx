@@ -1,12 +1,14 @@
-import { notFound } from 'next/navigation';
-import { Star, Truck, Store, ShoppingCart, Sparkles, AlertTriangle } from 'lucide-react';
+import type { Metadata } from 'next';
+import Link from 'next/link';
+import { Star, Truck, Store, ShoppingCart, AlertTriangle, CheckCircle2, SearchX } from 'lucide-react';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { ProductCard } from '@/components/ProductCard';
 import { PriceHistoryChart } from '@/components/PriceHistoryChart';
 import { AlertaProdutoInline } from '@/components/AlertaProdutoInline';
 import { buscarProdutoPorId, buscarSemelhantes } from '@/lib/produtos';
-import { produtoENovo, produtoPoucoVendido } from '@/lib/produto-badges';
+import { produtoPoucoVendido } from '@/lib/produto-badges';
+import { tempoRelativo } from '@/lib/format';
 
 export const revalidate = 60;
 
@@ -14,9 +16,50 @@ function formatarPreco(valor: number) {
   return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
 
+export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
+  const produto = await buscarProdutoPorId(params.id);
+  if (!produto) {
+    return { title: 'Produto não encontrado — Drop Secreto' };
+  }
+  const desconto = produto.precoAntigo
+    ? Math.round(((produto.precoAntigo - produto.precoAtual) / produto.precoAntigo) * 100)
+    : 0;
+  return {
+    title: `${produto.nome} — ${formatarPreco(produto.precoAtual)} | Drop Secreto`,
+    description: `${produto.nome} por ${formatarPreco(produto.precoAtual)}${
+      desconto > 0 ? ` (${desconto}% de desconto)` : ''
+    } na ${produto.lojaNome}. Analisado pelo Drop Score antes de aparecer aqui.`,
+    openGraph: { images: [produto.imagemUrl] },
+  };
+}
+
 export default async function ProdutoPage({ params }: { params: { id: string } }) {
   const produto = await buscarProdutoPorId(params.id);
-  if (!produto) notFound();
+
+  if (!produto) {
+    return (
+      <main>
+        <Navbar />
+        <div className="mx-auto max-w-xl px-6 py-20 text-center">
+          <SearchX className="mx-auto h-10 w-10 text-ink-faint" />
+          <h1 className="mt-4 font-display text-xl font-bold text-ink-primary">
+            Esse produto não está mais disponível
+          </h1>
+          <p className="mt-2 text-sm text-ink-secondary">
+            Ele pode ter saído do ar na Shopee, ficado sem estoque, ou parado de passar no Drop
+            Score. Mas tem bastante oferta boa esperando você.
+          </p>
+          <Link
+            href="/produtos"
+            className="mt-6 inline-block rounded-full bg-accent px-6 py-3 text-sm font-medium text-bg-base transition-opacity hover:opacity-90"
+          >
+            Ver outras ofertas
+          </Link>
+        </div>
+        <Footer />
+      </main>
+    );
+  }
 
   const semelhantes = await buscarSemelhantes(produto.categoriaSlug, produto.id, 4);
 
@@ -24,8 +67,16 @@ export default async function ProdutoPage({ params }: { params: { id: string } }
   const economiaPercentual = produto.precoAntigo
     ? Math.round((economiaReais / produto.precoAntigo) * 100)
     : 0;
-  const eNovo = produtoENovo(produto);
   const ePoucoVendido = produtoPoucoVendido(produto);
+
+  // "Por que isso passou" — substitui o número cru do Drop Score por sinais
+  // concretos e verificáveis (o score continua existindo por dentro, só não
+  // aparece mais como número na página do produto).
+  const sinaisDeConfianca = [
+    produto.lojaOficial && 'loja oficial',
+    produto.promocaoVerificada === true && 'desconto confirmado com histórico de preço',
+    produto.avaliacao > 0 && `nota ${produto.avaliacao.toFixed(1)}`,
+  ].filter(Boolean) as string[];
 
   return (
     <main>
@@ -37,45 +88,47 @@ export default async function ProdutoPage({ params }: { params: { id: string } }
             <img src={produto.imagemUrl} alt={produto.nome} className="aspect-square w-full object-cover" />
           </div>
 
-          <div className="flex flex-col">
-            <span
-              className={`w-fit rounded-full border px-2.5 py-1 text-xs font-medium mono-num ${
-                produto.classificacao === 'Excelente'
-                  ? 'border-accent/40 bg-accent/15 text-accent'
-                  : produto.classificacao === 'Boa'
-                  ? 'border-accent/20 bg-accent/8 text-accent/90'
-                  : 'border-line bg-ink-secondary/10 text-ink-secondary'
-              }`}
-            >
-              {produto.dropScore} score · {produto.classificacao}
-            </span>
+          <div className="flex min-w-0 flex-col">
+            {sinaisDeConfianca.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {sinaisDeConfianca.map((sinal) => (
+                  <span
+                    key={sinal}
+                    className="flex items-center gap-1 rounded-full border border-accent/30 bg-accent/10 px-2.5 py-1 text-xs text-accent"
+                  >
+                    <CheckCircle2 className="h-3.5 w-3.5" />
+                    {sinal}
+                  </span>
+                ))}
+              </div>
+            )}
 
-            {(eNovo || ePoucoVendido) && (
+            {ePoucoVendido && (
               <span className="mt-2 flex w-fit items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-xs text-amber-400">
-                {eNovo ? <Sparkles className="h-3.5 w-3.5" /> : <AlertTriangle className="h-3.5 w-3.5" />}
-                {eNovo
-                  ? 'produto novo na plataforma — ainda sem histórico de vendas próprio'
-                  : 'poucas vendas registradas até agora'}
+                <AlertTriangle className="h-3.5 w-3.5" />
+                poucas vendas registradas até agora
               </span>
             )}
 
             <h1 className="mt-3 font-display text-2xl font-bold text-ink-primary">{produto.nome}</h1>
 
-            <div className="mt-2 flex items-center gap-2 text-sm text-ink-secondary">
-              <Store className="h-4 w-4" />
-              {produto.lojaNome}
+            <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-ink-secondary">
+              <Store className="h-4 w-4 shrink-0" />
+              <span className="truncate">{produto.lojaNome}</span>
               {produto.lojaOficial && (
-                <span className="rounded-full border border-line px-2 py-0.5 text-xs">loja oficial</span>
+                <span className="shrink-0 rounded-full border border-line px-2 py-0.5 text-xs">
+                  loja oficial
+                </span>
               )}
             </div>
 
-            <div className="mt-1 flex items-center gap-1 text-sm text-ink-secondary">
-              <Star className="h-4 w-4 fill-accent text-accent" />
+            <div className="mt-1 flex flex-wrap items-center gap-1 text-sm text-ink-secondary">
+              <Star className="h-4 w-4 shrink-0 fill-accent text-accent" />
               <span className="mono-num text-ink-primary">{produto.avaliacao}</span>
               <span className="mono-num">· {produto.quantidadeVendida.toLocaleString('pt-BR')} vendidos</span>
             </div>
 
-            <div className="mt-6 flex items-baseline gap-3">
+            <div className="mt-6 flex flex-wrap items-baseline gap-3">
               <span className="mono-num text-3xl font-bold text-ink-primary">
                 {formatarPreco(produto.precoAtual)}
               </span>
@@ -92,6 +145,10 @@ export default async function ProdutoPage({ params }: { params: { id: string } }
                 <span className="mono-num">{economiaPercentual}%</span>)
               </p>
             )}
+
+            <p className="mt-1 text-[11px] text-ink-faint">
+              verificado {tempoRelativo(produto.atualizadoEm)}
+            </p>
 
             <div className="mt-4 flex flex-wrap gap-2 text-xs text-ink-secondary">
               <span className="flex items-center gap-1 rounded-full border border-line px-2.5 py-1">
@@ -126,7 +183,7 @@ export default async function ProdutoPage({ params }: { params: { id: string } }
         {semelhantes.length > 0 && (
           <div className="mt-12">
             <h2 className="mb-5 font-display text-xl font-bold text-ink-primary">Produtos semelhantes</h2>
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">
               {semelhantes.map((p) => (
                 <ProductCard key={p.id} produto={p} />
               ))}

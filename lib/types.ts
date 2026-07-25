@@ -16,6 +16,8 @@ export interface Produto {
   historico90d: number[];
   linkAfiliado: string;
   importadoEm: string;
+  atualizadoEm: string;
+  promocaoVerificada: boolean | null;
 }
 
 export interface Categoria {

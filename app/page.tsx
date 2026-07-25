@@ -54,7 +54,7 @@ export default async function HomePage() {
               importados — volte daqui a pouco.
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">
               {topOfertas.map((p) => (
                 <ProductCard key={p.id} produto={p} />
               ))}
@@ -75,11 +75,7 @@ export default async function HomePage() {
                 <h2 className="mb-5 font-display text-xl font-bold text-ink-primary">
                   Últimas quedas de preço
                 </h2>
-                <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-                  {ultimasQuedas.map((p) => (
-                    <ProductCard key={p.id} produto={p} />
-                  ))}
-                </div>
+                <RankingList produtos={ultimasQuedas} variante="desconto" />
               </div>
             )}
 

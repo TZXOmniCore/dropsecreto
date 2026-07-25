@@ -28,6 +28,8 @@ const CAMPOS_PRODUTO = `
   link_afiliado,
   cupom_id,
   importado_em,
+  atualizado_em,
+  promocao_verificada,
   categorias ( slug ),
   lojas ( nome, loja_oficial ),
   historico_precos ( preco, registrado_em )
@@ -57,6 +59,8 @@ interface ProdutoRow {
   link_afiliado: string;
   cupom_id: string | null;
   importado_em: string;
+  atualizado_em: string;
+  promocao_verificada: boolean | null;
   categorias: { slug: string } | null;
   lojas: { nome: string; loja_oficial: boolean } | null;
   historico_precos: { preco: number; registrado_em: string }[] | null;
@@ -100,6 +104,8 @@ function mapearProduto(row: ProdutoRow): Produto {
     historico90d,
     linkAfiliado: row.link_afiliado,
     importadoEm: row.importado_em,
+    atualizadoEm: row.atualizado_em,
+    promocaoVerificada: row.promocao_verificada,
   };
 }
 
@@ -148,20 +154,34 @@ export async function buscarTopOfertas(limite = 12): Promise<Produto[]> {
 }
 
 // Página "/produtos" (ver todos) — mesmo critério do Top Ofertas da home
-// (drop_score, maior relevância primeiro), só que sem limite curto.
-export async function buscarTodosPorScore(limite = 60): Promise<Produto[]> {
-  const { data, error } = await supabase
+// (drop_score, maior relevância primeiro), agora com paginação de verdade
+// (antes era só um limite fixo de 60, sem "próxima página").
+const PRODUTOS_POR_PAGINA = 24;
+
+export async function buscarTodosPorScorePaginado(
+  pagina = 1,
+  porPagina = PRODUTOS_POR_PAGINA
+): Promise<{ produtos: Produto[]; total: number; totalPaginas: number }> {
+  const de = (pagina - 1) * porPagina;
+  const ate = de + porPagina - 1;
+
+  const { data, error, count } = await supabase
     .from('produtos')
-    .select(CAMPOS_PRODUTO)
+    .select(CAMPOS_PRODUTO, { count: 'exact' })
     .order('drop_score', { ascending: false })
-    .limit(limite);
+    .range(de, ate);
 
   if (error) {
-    console.error('Erro ao buscar todos os produtos:', error.message);
-    return [];
+    console.error('Erro ao buscar todos os produtos (paginado):', error.message);
+    return { produtos: [], total: 0, totalPaginas: 0 };
   }
 
-  return (data ?? []).map(mapearProduto as any);
+  const total = count ?? 0;
+  return {
+    produtos: (data ?? []).map(mapearProduto as any),
+    total,
+    totalPaginas: Math.max(1, Math.ceil(total / porPagina)),
+  };
 }
 
 // Heurística temporária pro Flash Deals: produtos classificados como

@@ -2,26 +2,14 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Heart, Sparkles, AlertTriangle } from 'lucide-react';
+import { Heart, AlertTriangle } from 'lucide-react';
 import type { Produto } from '@/lib/types';
 import { ehFavorito, alternarFavorito } from '@/lib/favorites';
-import { produtoENovo, produtoPoucoVendido } from '@/lib/produto-badges';
+import { produtoPoucoVendido } from '@/lib/produto-badges';
+import { tempoRelativo } from '@/lib/format';
 
 function formatarPreco(valor: number) {
   return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-}
-
-function estiloDoScore(classificacao: Produto['classificacao']) {
-  switch (classificacao) {
-    case 'Excelente':
-      return 'border-accent/40 bg-accent/15 text-accent';
-    case 'Boa':
-      return 'border-accent/20 bg-accent/8 text-accent/90';
-    case 'Regular':
-      return 'border-line bg-ink-secondary/10 text-ink-secondary';
-    case 'Ruim':
-      return 'border-danger/30 bg-danger/10 text-danger';
-  }
 }
 
 function Sparkline({ dados }: { dados: number[] }) {
@@ -62,79 +50,101 @@ export function ProductCard({ produto }: { produto: Produto }) {
     ? Math.round(((produto.precoAntigo - produto.precoAtual) / produto.precoAntigo) * 100)
     : 0;
 
-  const eNovo = produtoENovo(produto);
   const ePoucoVendido = produtoPoucoVendido(produto);
 
   return (
-    <Link
-      href={`/produto/${produto.id}`}
-      className="glass group flex flex-col gap-3 rounded-2xl p-4 shadow-card transition-transform hover:-translate-y-0.5 hover:border-accent/30"
-    >
-      <div className="relative overflow-hidden rounded-xl bg-bg-raised">
+    <Link href={`/produto/${produto.id}`} className="group block">
+      {/* Celular: linha resumida (sem imagem grande, sem gráfico) — a pessoa
+          clica pra ver a página completa do produto. A partir de sm:, vira o
+          card completo de sempre. */}
+      <div className="glass flex items-center gap-3 rounded-2xl p-3 shadow-card sm:hidden">
         <img
           src={produto.imagemUrl}
-          alt={produto.nome}
-          className="aspect-square w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+          alt=""
+          className="h-14 w-14 shrink-0 rounded-lg bg-bg-raised object-cover"
         />
-        <div
-          className={`absolute left-2 top-2 flex items-center gap-1 rounded-full border px-2 py-1 text-xs font-medium mono-num ${estiloDoScore(
-            produto.classificacao
-          )}`}
-        >
-          {produto.dropScore}
-          <span className="font-body font-normal opacity-70">score</span>
-        </div>
-
-        <button
-          type="button"
-          onClick={alternarClique}
-          aria-label={favoritado ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
-          className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-bg-base/70 backdrop-blur-sm transition-colors hover:bg-bg-base"
-        >
-          <Heart className={`h-4 w-4 ${favoritado ? 'fill-accent text-accent' : 'text-ink-secondary'}`} />
-        </button>
-
-        {desconto > 0 && (
-          <div className="absolute bottom-2 right-2 rounded-full bg-bg-base/80 px-2 py-1 text-xs font-medium text-accent mono-num">
-            -{desconto}%
+        <div className="min-w-0 flex-1">
+          <h3 className="truncate text-sm text-ink-primary">{produto.nome}</h3>
+          <div className="mt-0.5 flex items-baseline gap-2">
+            <span className="mono-num text-sm font-semibold text-ink-primary">
+              {formatarPreco(produto.precoAtual)}
+            </span>
+            {produto.precoAntigo && (
+              <span className="mono-num text-[11px] text-ink-faint line-through">
+                {formatarPreco(produto.precoAntigo)}
+              </span>
+            )}
           </div>
+        </div>
+        {desconto > 0 && (
+          <span className="mono-num shrink-0 rounded-full bg-accent/10 px-2 py-1 text-xs font-medium text-accent">
+            -{desconto}%
+          </span>
         )}
       </div>
 
-      <div className="flex flex-col gap-2">
-        <h3 className="line-clamp-2 text-sm text-ink-primary">{produto.nome}</h3>
+      {/* Card completo (tablet/desktop, sm: pra cima) */}
+      <div className="glass hidden flex-col gap-3 rounded-2xl p-4 shadow-card transition-transform sm:flex sm:group-hover:-translate-y-0.5 sm:group-hover:border-accent/30">
+        <div className="relative overflow-hidden rounded-xl bg-bg-raised">
+          <img
+            src={produto.imagemUrl}
+            alt={produto.nome}
+            className="aspect-square w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+          />
 
-        <div className="flex items-baseline gap-2">
-          <span className="mono-num text-lg font-semibold text-ink-primary">
-            {formatarPreco(produto.precoAtual)}
-          </span>
-          {produto.precoAntigo && (
-            <span className="mono-num text-xs text-ink-faint line-through">
-              {formatarPreco(produto.precoAntigo)}
-            </span>
+          <button
+            type="button"
+            onClick={alternarClique}
+            aria-label={favoritado ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
+            className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-bg-base/70 backdrop-blur-sm transition-colors hover:bg-bg-base"
+          >
+            <Heart className={`h-4 w-4 ${favoritado ? 'fill-accent text-accent' : 'text-ink-secondary'}`} />
+          </button>
+
+          {desconto > 0 && (
+            <div className="absolute bottom-2 right-2 rounded-full bg-bg-base/80 px-2 py-1 text-xs font-medium text-accent mono-num">
+              -{desconto}%
+            </div>
           )}
         </div>
 
-        <Sparkline dados={produto.historico90d} />
+        <div className="flex flex-col gap-2">
+          <h3 className="line-clamp-2 text-sm text-ink-primary">{produto.nome}</h3>
 
-        <div className="flex flex-wrap gap-1.5 text-[11px] text-ink-secondary">
-          {(eNovo || ePoucoVendido) && (
-            <span className="flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-amber-400">
-              {eNovo ? <Sparkles className="h-3 w-3" /> : <AlertTriangle className="h-3 w-3" />}
-              {eNovo ? 'produto novo' : 'poucas vendas'}
+          <div className="flex items-baseline gap-2">
+            <span className="mono-num text-lg font-semibold text-ink-primary">
+              {formatarPreco(produto.precoAtual)}
             </span>
-          )}
-          {produto.lojaOficial && (
-            <span className="rounded-full border border-line px-2 py-0.5">loja oficial</span>
-          )}
-          {produto.freteGratis && (
-            <span className="rounded-full border border-line px-2 py-0.5">frete grátis</span>
-          )}
-          {produto.temCupom && (
-            <span className="rounded-full border border-accent/30 px-2 py-0.5 text-accent/90">
-              cupom disponível
-            </span>
-          )}
+            {produto.precoAntigo && (
+              <span className="mono-num text-xs text-ink-faint line-through">
+                {formatarPreco(produto.precoAntigo)}
+              </span>
+            )}
+          </div>
+
+          <Sparkline dados={produto.historico90d} />
+
+          <div className="flex flex-wrap gap-1.5 text-[11px] text-ink-secondary">
+            {ePoucoVendido && (
+              <span className="flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-amber-400">
+                <AlertTriangle className="h-3 w-3" />
+                poucas vendas
+              </span>
+            )}
+            {produto.lojaOficial && (
+              <span className="rounded-full border border-line px-2 py-0.5">loja oficial</span>
+            )}
+            {produto.freteGratis && (
+              <span className="rounded-full border border-line px-2 py-0.5">frete grátis</span>
+            )}
+            {produto.temCupom && (
+              <span className="rounded-full border border-accent/30 px-2 py-0.5 text-accent/90">
+                cupom disponível
+              </span>
+            )}
+          </div>
+
+          <p className="text-[11px] text-ink-faint">verificado {tempoRelativo(produto.atualizadoEm)}</p>
         </div>
       </div>
     </Link>
