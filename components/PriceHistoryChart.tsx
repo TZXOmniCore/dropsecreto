@@ -23,7 +23,7 @@ export function PriceHistoryChart({ dados }: { dados: number[] }) {
   return (
     <div className="glass rounded-2xl p-5">
       <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
-        <h3 className="text-sm font-medium text-ink-primary">Histórico de preço · últimos 90 dias</h3>
+        <h3 className="text-sm font-medium text-ink-primary">Histórico de preço</h3>
         <div className="flex gap-4 text-xs text-ink-secondary">
           <span>
             menor <span className="mono-num text-ink-primary">{formatarPreco(min)}</span>
