@@ -8,6 +8,7 @@
 
 import { supabase } from './supabase';
 import type { Produto, Categoria } from './types';
+export { produtoENovo, produtoPoucoVendido, DIAS_PRODUTO_NOVO, VENDAS_PRODUTO_POUCO_VENDIDO } from './produto-badges';
 
 // Campos + relacionamentos usados em toda listagem de produto.
 // "categorias" e "lojas" vêm como objeto (relação de 1 pra 1
@@ -100,25 +101,6 @@ function mapearProduto(row: ProdutoRow): Produto {
     linkAfiliado: row.link_afiliado,
     importadoEm: row.importado_em,
   };
-}
-
-// --- Badges de "produto novo" / "pouco vendido" ---
-// Derivados só de campos que já existem (sem coluna nova no banco):
-// novo = importado há pouco tempo por nós; pouco vendido = quantidade
-// de vendas baixa. Um produto pode ser as duas coisas ao mesmo tempo.
-// Ajustar os números abaixo é o suficiente pra afinar o critério.
-export const DIAS_PRODUTO_NOVO = 7;
-export const VENDAS_PRODUTO_POUCO_VENDIDO = 10;
-
-export function produtoENovo(produto: Pick<Produto, 'importadoEm'>): boolean {
-  if (!produto.importadoEm) return false;
-  const diasDesdeImportacao =
-    (Date.now() - new Date(produto.importadoEm).getTime()) / (1000 * 60 * 60 * 24);
-  return diasDesdeImportacao <= DIAS_PRODUTO_NOVO;
-}
-
-export function produtoPoucoVendido(produto: Pick<Produto, 'quantidadeVendida'>): boolean {
-  return produto.quantidadeVendida < VENDAS_PRODUTO_POUCO_VENDIDO;
 }
 
 // --- Categorias ---
@@ -244,18 +226,16 @@ export async function buscarRankingPorDesconto(
   periodo: 'dia' | 'mes' = 'dia',
   limite = 20
 ): Promise<Produto[]> {
-  let query = supabase
-    .from('produtos')
-    .select(CAMPOS_PRODUTO)
+  const base = supabase.from('produtos').select(CAMPOS_PRODUTO);
+
+  const comFiltro =
+    periodo === 'mes'
+      ? base.gte('atualizado_em', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString())
+      : base;
+
+  const { data, error } = await comFiltro
     .order('desconto_percentual', { ascending: false })
     .limit(limite);
-
-  if (periodo === 'mes') {
-    const trintaDiasAtras = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
-    query = query.gte('atualizado_em', trintaDiasAtras);
-  }
-
-  const { data, error } = await query;
 
   if (error) {
     console.error('Erro ao buscar ranking por desconto:', error.message);
