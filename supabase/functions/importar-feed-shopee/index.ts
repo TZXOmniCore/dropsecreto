@@ -53,11 +53,10 @@ const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
 // Itens por página buscados na Shopee A CADA INVOCAÇÃO (1 página só).
-// A Shopee documenta um teto de 500 por página — 100 é uma escolha
-// conservadora pra manter o trabalho síncrono por invocação bem abaixo do
-// teto de CPU Time; dá pra subir aos poucos observando logs_importacao
-// (campo "erro") depois do deploy.
-const LIMITE_POR_PAGINA = 100;
+// 50 é o TETO REAL da API — confirmado pelo próprio erro da Shopee
+// ("Exceeded the maximum number of page limit, the maximum limit is 50")
+// quando tentei 100. Não dá pra subir esse número.
+const LIMITE_POR_PAGINA = 50;
 
 // Não busca nota da loja de novo se ela já foi atualizada há menos disso.
 const IDADE_MAX_LOJA_MS = 24 * 60 * 60 * 1000; // 24h
@@ -389,6 +388,12 @@ async function importarLote(
           link_afiliado: node.offerLink,
           link_original: node.productLink,
           status: 'pendente', // o Motor de Drop Score decide aprovar/rejeitar depois
+          // Sem isso, produto que JÁ EXISTE (upsert cai no UPDATE por
+          // conflito) mantém o atualizado_em congelado no valor do import
+          // original pra sempre — o default da coluna só se aplica em
+          // INSERT novo, e o upsert só atualiza as colunas presentes aqui.
+          // Era exatamente por isso que "verificado há X" ficava travado.
+          atualizado_em: new Date().toISOString(),
         },
         { onConflict: 'shopee_item_id' }
       );

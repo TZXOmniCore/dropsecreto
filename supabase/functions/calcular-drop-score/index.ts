@@ -182,6 +182,28 @@ function calcularPontoFrete(freteGratis: boolean, valorFrete: number | null, pre
 }
 
 // ------------------------------------------------------------
+// Roda uma lista de itens com no máximo `limite` chamadas simultâneas.
+// ------------------------------------------------------------
+async function mapComLimite<T, R>(
+  itens: T[],
+  limite: number,
+  fn: (item: T) => Promise<R>
+): Promise<R[]> {
+  const resultados: R[] = new Array(itens.length);
+  let proximo = 0;
+
+  async function worker() {
+    while (proximo < itens.length) {
+      const indiceAtual = proximo++;
+      resultados[indiceAtual] = await fn(itens[indiceAtual]);
+    }
+  }
+
+  await Promise.all(Array.from({ length: Math.min(limite, itens.length) }, () => worker()));
+  return resultados;
+}
+
+// ------------------------------------------------------------
 // Handler da Edge Function — processa 1 lote (200) por invocação.
 // ------------------------------------------------------------
 Deno.serve(async () => {
@@ -211,6 +233,7 @@ Deno.serve(async () => {
 
   let aprovados = 0;
   let rejeitados = 0;
+  let falhas = 0;
 
   const atualizacoes = produtos.map((p: any) => {
     const resultado = calcularDropScore({
@@ -242,25 +265,31 @@ Deno.serve(async () => {
     };
   });
 
-  const { error: erroUpsert } = await supabase
-    .from('produtos')
-    .upsert(atualizacoes, { onConflict: 'id' });
+  // UPDATE por id em vez de upsert em lote: o upsert do Postgres valida as
+  // colunas NOT NULL da tabela inteira (ex.: "nome") mesmo quando o
+  // resultado é um UPDATE por conflito — como o lote só tem os campos do
+  // score, o upsert quebrava com "null value in column nome". Update não
+  // toca em coluna nenhuma fora da lista, então não tem esse problema.
+  await mapComLimite(atualizacoes, 20, async (item) => {
+    const { error } = await supabase
+      .from('produtos')
+      .update({
+        drop_score: item.drop_score,
+        classificacao_score: item.classificacao_score,
+        promocao_verificada: item.promocao_verificada,
+        status: item.status,
+        motivo_rejeicao: item.motivo_rejeicao,
+      })
+      .eq('id', item.id);
 
-  if (erroUpsert) {
-    return new Response(
-      JSON.stringify({
-        ok: false,
-        erro: erroUpsert.message,
-        processados: 0,
-        aprovados,
-        rejeitados,
-      }),
-      { status: 500 }
-    );
-  }
+    if (error) {
+      falhas++;
+      console.error(`Erro ao atualizar produto ${item.id}:`, error.message);
+    }
+  });
 
   return new Response(
-    JSON.stringify({ ok: true, processados: atualizacoes.length, aprovados, rejeitados }),
-    { status: 200 }
+    JSON.stringify({ ok: falhas === 0, processados: atualizacoes.length - falhas, aprovados, rejeitados, falhas }),
+    { status: falhas === 0 ? 200 : 500 }
   );
 });
