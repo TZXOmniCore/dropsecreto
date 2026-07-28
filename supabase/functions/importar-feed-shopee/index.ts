@@ -236,7 +236,11 @@ async function buscarNotaLoja(shopId: number): Promise<number | null> {
         }
       }
     `;
-    const dados = await chamarGraphQL(query, { shopId });
+    // CORREÇÃO: a Shopee declara shopId como escala Int64 — só aceita como
+    // STRING no JSON da variável (number puro do JS/JSON não representa 64
+    // bits com segurança e a API rejeitava com "wrong type" em toda chamada,
+    // fazendo avaliacao_media da loja nunca ser preenchida de verdade).
+    const dados = await chamarGraphQL(query, { shopId: String(shopId) });
     const nota = parseFloat(dados?.shopOfferV2?.nodes?.[0]?.ratingStar) || null;
     cacheNotaLoja.set(shopId, nota);
     return nota;
