@@ -464,12 +464,16 @@ Deno.serve(async () => {
 
     await salvarProximaPagina(supabase, proximaPagina);
 
-    await supabase.from('logs_importacao').insert({
-      fonte: 'shopee_feed',
-      produtos_importados: totalImportados,
-      iniciado_em: inicio,
-      finalizado_em: new Date().toISOString(),
-    });
+    try {
+      await supabase.from('logs_importacao').insert({
+        fonte: 'shopee_feed',
+        produtos_importados: totalImportados,
+        iniciado_em: inicio,
+        finalizado_em: new Date().toISOString(),
+      });
+    } catch (erroDeLog) {
+      console.error('Falha ao gravar log de sucesso em logs_importacao:', erroDeLog);
+    }
 
     return new Response(
       JSON.stringify({ ok: true, importados: totalImportados, pagina, proximaPagina }),
@@ -480,16 +484,22 @@ Deno.serve(async () => {
     // importação inteira pro zero por causa de uma falha pontual).
     await salvarProximaPagina(supabase, pagina).catch(() => {});
 
-    await supabase
-      .from('logs_importacao')
-      .insert({
+    // IMPORTANTE: o builder do supabase-js (.from().insert()) só implementa
+    // .then() — não é uma Promise de verdade, não tem .catch(). Chamar
+    // .catch() direto nele estoura "TypeError: ...insert(...).catch is not
+    // a function" e derruba a função ANTES de logar o erro real. Por isso
+    // aqui usa try/catch em vez de encadear .catch().
+    try {
+      await supabase.from('logs_importacao').insert({
         fonte: 'shopee_feed',
         produtos_importados: totalImportados,
         erro: String(erro),
         iniciado_em: inicio,
         finalizado_em: new Date().toISOString(),
-      })
-      .catch(() => {});
+      });
+    } catch (erroDeLog) {
+      console.error('Falha ao gravar log de erro em logs_importacao:', erroDeLog);
+    }
 
     return new Response(JSON.stringify({ ok: false, erro: String(erro) }), { status: 500 });
   }
