@@ -4,6 +4,7 @@ import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { CategoryChips } from '@/components/CategoryChips';
 import { ProductCard } from '@/components/ProductCard';
+import { FiltroExplicado } from '@/components/FiltroExplicado';
 import { buscarCategorias, buscarProdutosPorCategoria } from '@/lib/produtos';
 
 export const revalidate = 60;
@@ -43,6 +44,8 @@ export default async function CategoriaPage({ params }: { params: { slug: string
         </p>
 
         <CategoryChips categorias={categorias} />
+
+        <FiltroExplicado />
 
         {produtos.length === 0 ? (
           <div className="glass mt-8 rounded-2xl p-10 text-center text-sm text-ink-secondary">

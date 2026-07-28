@@ -5,6 +5,7 @@ import { CategoryChips } from '@/components/CategoryChips';
 import { ProductCard } from '@/components/ProductCard';
 import { FlashDeals } from '@/components/FlashDeals';
 import { RankingList } from '@/components/RankingList';
+import { FiltroExplicado } from '@/components/FiltroExplicado';
 import { Footer } from '@/components/Footer';
 // "Como o Drop Score funciona" agora é uma página própria em /como-funciona
 // (link no botão secundário do ScannerHero) — não mora mais aqui na home.
@@ -46,6 +47,7 @@ export default async function HomePage() {
               Ver todos →
             </Link>
           </div>
+          <FiltroExplicado />
           {topOfertas.length === 0 ? (
             <div className="glass rounded-2xl p-10 text-center text-sm text-ink-secondary">
               Nenhuma oferta aprovada ainda. O Motor de Drop Score está analisando os produtos

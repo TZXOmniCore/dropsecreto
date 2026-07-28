@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { Navbar } from '@/components/Navbar';
 import { ProductCard } from '@/components/ProductCard';
+import { FiltroExplicado } from '@/components/FiltroExplicado';
 import { Footer } from '@/components/Footer';
 import { buscarTodosPorScorePaginado } from '@/lib/produtos';
 
@@ -29,6 +30,10 @@ export default async function TodosProdutosPage({
             ? `${total} produtos aprovados, do mais relevante pro menos relevante.`
             : 'Ordenados do mais relevante pro menos relevante.'}
         </p>
+
+        <div className="mt-4">
+          <FiltroExplicado />
+        </div>
 
         {produtos.length === 0 ? (
           <div className="glass mt-8 rounded-2xl p-10 text-center text-sm text-ink-secondary">

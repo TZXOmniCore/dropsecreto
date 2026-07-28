@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { RankingList } from '@/components/RankingList';
+import { FiltroExplicado } from '@/components/FiltroExplicado';
 import { buscarRankingPorDesconto } from '@/lib/produtos';
 
 export const revalidate = 60;
@@ -44,6 +45,10 @@ export default async function RankingPage({
               {a.rotulo}
             </Link>
           ))}
+        </div>
+
+        <div className="mt-6">
+          <FiltroExplicado />
         </div>
 
         <div className="mt-8">
