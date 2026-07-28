@@ -30,9 +30,9 @@ export const PESOS = {
   cupom: 0.05,
 } as const;
 
-export const LIMIAR_NOTA_LOJA = 4.0;
-export const LIMIAR_NOTA_PRODUTO = 4.0;
-export const LIMIAR_NOTA_LOJA_PRODUTO_SEM_AVALIACAO = 4.5;
+export const LIMIAR_NOTA_LOJA = 3.5;
+export const LIMIAR_NOTA_PRODUTO = 3.5;
+export const LIMIAR_NOTA_LOJA_PRODUTO_SEM_AVALIACAO = 4.0;
 
 export interface HistoricoPrecoPonto {
   preco: number;

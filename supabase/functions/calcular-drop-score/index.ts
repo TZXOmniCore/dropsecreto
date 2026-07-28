@@ -48,9 +48,9 @@ const PESOS = {
   cupom: 0.05,
 } as const;
 
-const LIMIAR_NOTA_LOJA = 4.0;
-const LIMIAR_NOTA_PRODUTO = 4.0;
-const LIMIAR_NOTA_LOJA_PRODUTO_SEM_AVALIACAO = 4.5;
+const LIMIAR_NOTA_LOJA = 3.5;
+const LIMIAR_NOTA_PRODUTO = 3.5;
+const LIMIAR_NOTA_LOJA_PRODUTO_SEM_AVALIACAO = 4.0;
 
 interface HistoricoPrecoPonto {
   preco: number;
