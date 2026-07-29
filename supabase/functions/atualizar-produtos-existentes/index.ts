@@ -106,6 +106,7 @@ Deno.serve(async () => {
   const { data: produtos, error: erroSelect } = await supabase
     .from('produtos')
     .select('id, shopee_item_id, lojas(shopee_shop_id)')
+    .eq('status', 'aprovado') // só recheca o que está de fato publicado no site
     .order('atualizado_em', { ascending: true })
     .limit(LOTE_POR_EXECUCAO);
 
@@ -132,6 +133,22 @@ Deno.serve(async () => {
     try {
       const oferta = await buscarOfertaPorItem(shopId, p.shopee_item_id);
       if (!oferta) {
+        // A Shopee não retornou esse item na consulta por itemId+shopId —
+        // sinal de que ele saiu da campanha de afiliados ativa (deixou de
+        // gerar comissão). Continuar mostrando preço/desconto congelado
+        // de um link que não é mais uma oferta ativa não ajuda ninguém,
+        // então tira do site em vez de deixar parado pra sempre.
+        console.log(
+          `Item ${p.shopee_item_id} (loja ${shopId}) não retornou oferta ativa — marcando como rejeitado.`
+        );
+        const { error } = await supabase
+          .from('produtos')
+          .update({
+            status: 'rejeitado',
+            motivo_rejeicao: 'Oferta não encontrada mais na Shopee (fora da campanha de afiliados ativa).',
+          })
+          .eq('id', p.id);
+        if (error) console.error(`Erro ao marcar produto ${p.id} como rejeitado:`, error.message);
         falhas++;
         return;
       }
