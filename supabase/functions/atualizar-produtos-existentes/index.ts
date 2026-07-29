@@ -105,7 +105,7 @@ Deno.serve(async () => {
   // desconto na tela nunca ficam velhos por muito tempo.
   const { data: produtos, error: erroSelect } = await supabase
     .from('produtos')
-    .select('id, shopee_item_id, lojas(shopee_shop_id)')
+    .select('id, shopee_item_id, loja_id, lojas(shopee_shop_id)')
     .eq('status', 'aprovado') // só recheca o que está de fato publicado no site
     .order('atualizado_em', { ascending: true })
     .limit(LOTE_POR_EXECUCAO);
@@ -115,41 +115,45 @@ Deno.serve(async () => {
   }
 
   if (!produtos || produtos.length === 0) {
-    return new Response(JSON.stringify({ ok: true, processados: 0, atualizados: 0, falhas: 0 }), {
-      status: 200,
-    });
+    return new Response(
+      JSON.stringify({ ok: true, processados: 0, atualizados: 0, semLoja: 0, semOferta: 0, falhasApi: 0 }),
+      { status: 200 }
+    );
   }
 
   let atualizados = 0;
-  let falhas = 0;
+  let semLoja = 0; // produto sem loja_id resolvida — bug de import antigo, não da Shopee
+  let semOferta = 0; // Shopee respondeu, mas sem oferta pra esse item agora
+  let falhasApi = 0; // erro de verdade (rede, banco, etc.)
 
   await mapComLimite(produtos, 8, async (p: any) => {
     const shopId = p.lojas?.shopee_shop_id;
+
+    // IMPORTANTE: em QUALQUER ramo abaixo — sucesso ou falha — o produto
+    // precisa ter atualizado_em tocado. Sem isso, um produto quebrado
+    // nunca sai da posição "mais antigo" e trava a fila inteira pra
+    // sempre nos mesmos itens (foi exatamente o bug que travava tudo).
     if (!shopId) {
-      falhas++;
+      semLoja++;
+      console.error(
+        `Produto ${p.id} (item ${p.shopee_item_id}) sem loja resolvida (loja_id=${p.loja_id ?? 'null'}) — desenfileirando pra não travar a fila.`
+      );
+      await supabase.from('produtos').update({ atualizado_em: new Date().toISOString() }).eq('id', p.id);
       return;
     }
 
     try {
       const oferta = await buscarOfertaPorItem(shopId, p.shopee_item_id);
       if (!oferta) {
-        // A Shopee não retornou esse item na consulta por itemId+shopId —
-        // sinal de que ele saiu da campanha de afiliados ativa (deixou de
-        // gerar comissão). Continuar mostrando preço/desconto congelado
-        // de um link que não é mais uma oferta ativa não ajuda ninguém,
-        // então tira do site em vez de deixar parado pra sempre.
+        // A Shopee não retornou esse item nessa consulta específica.
+        // NÃO estou mais assumindo que isso significa "saiu da campanha"
+        // — não tenho certeza suficiente disso ainda. Só toca a fila e
+        // loga, pra investigar com dado real em vez de chute.
+        semOferta++;
         console.log(
-          `Item ${p.shopee_item_id} (loja ${shopId}) não retornou oferta ativa — marcando como rejeitado.`
+          `Item ${p.shopee_item_id} (loja ${shopId}) não retornou oferta nessa consulta — mantendo como está, só reenfileirando.`
         );
-        const { error } = await supabase
-          .from('produtos')
-          .update({
-            status: 'rejeitado',
-            motivo_rejeicao: 'Oferta não encontrada mais na Shopee (fora da campanha de afiliados ativa).',
-          })
-          .eq('id', p.id);
-        if (error) console.error(`Erro ao marcar produto ${p.id} como rejeitado:`, error.message);
-        falhas++;
+        await supabase.from('produtos').update({ atualizado_em: new Date().toISOString() }).eq('id', p.id);
         return;
       }
 
@@ -169,19 +173,34 @@ Deno.serve(async () => {
         .eq('id', p.id);
 
       if (error) {
-        falhas++;
+        falhasApi++;
         console.error(`Erro ao atualizar produto ${p.id}:`, error.message);
       } else {
         atualizados++;
       }
     } catch (erro) {
-      falhas++;
+      falhasApi++;
       console.error(`Erro ao rechecar item ${p.shopee_item_id} (loja ${shopId}):`, erro);
+      // Mesmo num erro de verdade (rede, timeout, etc.), toca a fila —
+      // senão um erro passageiro também travaria esse produto na frente
+      // pra sempre, do mesmo jeito que o bug do "sem loja" fazia.
+      await supabase
+        .from('produtos')
+        .update({ atualizado_em: new Date().toISOString() })
+        .eq('id', p.id)
+        .then(() => {}, () => {});
     }
   });
 
   return new Response(
-    JSON.stringify({ ok: true, processados: produtos.length, atualizados, falhas }),
+    JSON.stringify({
+      ok: true,
+      processados: produtos.length,
+      atualizados,
+      semLoja,
+      semOferta,
+      falhasApi,
+    }),
     { status: 200 }
   );
 });
