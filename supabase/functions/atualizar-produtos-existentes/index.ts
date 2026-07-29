@@ -94,7 +94,11 @@ async function buscarOfertaPorItem(shopId: number, itemId: number): Promise<any 
       }
     }
   `;
-  const dados = await chamarGraphQL(query, { shopId, itemId });
+  // shopId/itemId como STRING no JSON, não number — campos Int64 costumam
+  // exigir o valor como texto pra não perder precisão de 64 bits sendo
+  // transportado como número JSON puro. Foi a causa confirmada do erro
+  // "wrong type" (code 10010) que estava batendo em quase todo item.
+  const dados = await chamarGraphQL(query, { shopId: String(shopId), itemId: String(itemId) });
   return dados?.productOfferV2?.nodes?.[0] ?? null;
 }
 
@@ -126,7 +130,7 @@ Deno.serve(async () => {
   let semOferta = 0; // Shopee respondeu, mas sem oferta pra esse item agora
   let falhasApi = 0; // erro de verdade (rede, banco, etc.)
 
-  await mapComLimite(produtos, 8, async (p: any) => {
+  await mapComLimite(produtos, 3, async (p: any) => {
     const shopId = p.lojas?.shopee_shop_id;
 
     // IMPORTANTE: em QUALQUER ramo abaixo — sucesso ou falha — o produto
