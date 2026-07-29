@@ -30,9 +30,9 @@ export const PESOS = {
   cupom: 0.05,
 } as const;
 
-export const LIMIAR_NOTA_LOJA = 3.5;
-export const LIMIAR_NOTA_PRODUTO = 3.5;
-export const LIMIAR_NOTA_LOJA_PRODUTO_SEM_AVALIACAO = 4.0;
+export const LIMIAR_NOTA_LOJA = 4.0;
+export const LIMIAR_NOTA_PRODUTO = 4.0;
+export const LIMIAR_NOTA_LOJA_PRODUTO_SEM_AVALIACAO = 4.5;
 
 export interface HistoricoPrecoPonto {
   preco: number;
@@ -75,7 +75,11 @@ export function calcularDropScore(entrada: EntradaDropScore): ResultadoDropScore
     );
   }
 
-  const produtoSemAvaliacao = entrada.quantidadeAvaliacoes === 0;
+  // A Shopee Affiliate API (productOfferV2) não expõe contagem de
+  // avaliações, só a nota média (ratingStar) — por isso o corte usa a
+  // NOTA como sinal de "ainda sem avaliação", não uma contagem que essa
+  // integração nunca vai ter como preencher de verdade.
+  const produtoSemAvaliacao = entrada.avaliacao <= 0;
   if (produtoSemAvaliacao) {
     if (entrada.lojaAvaliacaoMedia < LIMIAR_NOTA_LOJA_PRODUTO_SEM_AVALIACAO) {
       return rejeitar(
@@ -98,7 +102,7 @@ export function calcularDropScore(entrada: EntradaDropScore): ResultadoDropScore
   // --- Pontuação por critério, cada um normalizado entre 0 e 1 ---
   const pontoDesconto = calcularPontoDesconto(entrada.precoAtual, entrada.precoAntigo);
   const pontoHistorico = promocaoVerificada ? 1 : entrada.precoAntigo != null ? 0.2 : 0.5;
-  const pontoAvaliacao = calcularPontoAvaliacao(entrada.avaliacao, entrada.quantidadeAvaliacoes);
+  const pontoAvaliacao = calcularPontoAvaliacao(entrada.avaliacao);
   const pontoVendas = calcularPontoVendas(entrada.quantidadeVendida);
   const pontoLoja = calcularPontoLoja(entrada.lojaOficial, entrada.lojaConfiabilidade);
   const pontoFrete = calcularPontoFrete(entrada.freteGratis, entrada.valorFrete, entrada.precoAtual);
@@ -141,11 +145,9 @@ function calcularPontoDesconto(precoAtual: number, precoAntigo: number | null): 
   return Math.min(percentual / 70, 1); // 70%+ de desconto já pontua o máximo
 }
 
-function calcularPontoAvaliacao(avaliacao: number, quantidadeAvaliacoes: number): number {
-  if (quantidadeAvaliacoes === 0) return 0.5; // neutro — produto novo, ainda sem histórico
-  const pontoBase = avaliacao / 5;
-  const confianca = Math.min(quantidadeAvaliacoes / 50, 1); // poucas avaliações pesam menos
-  return pontoBase * (0.5 + 0.5 * confianca);
+function calcularPontoAvaliacao(avaliacao: number): number {
+  if (avaliacao <= 0) return 0.5; // sem nota ainda — neutro, não pune nem beneficia
+  return avaliacao / 5;
 }
 
 function calcularPontoVendas(quantidadeVendida: number): number {
