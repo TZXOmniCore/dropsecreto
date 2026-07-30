@@ -19,11 +19,28 @@
 // (calcularDropScore + PESOS + limiares) está copiada aqui dentro pra
 // esse deploy funcionar sem depender de outro arquivo.
 //
-// ⚠️ Essa cópia é idêntica, hoje, à de supabase/functions/_shared/
-// drop-score-engine.ts (usada pelo frontend em HowItWorks.tsx). Se um
-// dia mudar peso/limiar, muda nos DOIS lugares — ou migra o deploy pra
-// CLI (`supabase functions deploy`), que bundla o _shared automático e
-// aí volta a ter uma fonte única de verdade.
+// ⚠️ Essa cópia foi revisada e alinhada de propósito com a de
+// supabase/functions/_shared/drop-score-engine.ts (usada pelo frontend em
+// HowItWorks.tsx) nesta atualização — os dois arquivos estavam com
+// limiares diferentes (3,5 aqui, 4,0 lá) e foram unificados. Se um dia
+// mudar peso/limiar, muda nos DOIS lugares — ou migra o deploy pra CLI
+// (`supabase functions deploy`), que bundla o _shared automático e aí
+// volta a ter uma fonte única de verdade.
+//
+// CORREÇÃO 3 (frete/cupom são dado morto): a Shopee Affiliate API
+// (productOfferV2) não devolve frete nem cupom — esses dois campos nunca
+// são preenchidos pelo importador, então os pesos deles sempre caíam num
+// valor fixo/neutro (15% do score não discriminava nada de verdade). O
+// peso foi zerado e redistribuído pros critérios com dado real. Reativar
+// só quando a API passar a expor isso de fato.
+//
+// CORREÇÃO 4 (corte de "sem avaliação" nunca disparava do jeito certo):
+// `quantidade_avaliacoes` também nunca é preenchido pelo importador (fica
+// sempre 0), então o corte antigo (`quantidadeAvaliacoes === 0`) SEMPRE
+// caía no ramo "produto sem avaliação" — a nota própria do produto
+// (`avaliacao`, que a Shopee de fato manda) nunca era checada contra o
+// limiar de 3,5. Trocado pra usar `avaliacao <= 0` como sinal de "ainda
+// sem nota", que é o dado que a API realmente entrega.
 // ============================================================
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
@@ -33,19 +50,19 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const LOTE_POR_EXECUCAO = 200;
 
 // ------------------------------------------------------------
-// Motor do Drop Score (cópia de _shared/drop-score-engine.ts — ver aviso
-// no topo do arquivo. Reconstruído a partir do que já estava documentado
-// em HowItWorks.tsx; pesos/limiares são valores razoáveis escolhidos por
-// mim, não os originais recuperados — revisar e ajustar como preferir).
+// Motor do Drop Score (mantido em sincronia manual com
+// _shared/drop-score-engine.ts — ver aviso no topo do arquivo).
 // ------------------------------------------------------------
+// `frete` e `cupom` ficam em 0 até a Shopee Affiliate API expor esse dado
+// de verdade (ver CORREÇÃO 3 acima) — não reativar sem dado real chegando.
 const PESOS = {
-  desconto: 0.25,
-  historicoPreco: 0.2,
-  avaliacao: 0.15,
-  vendas: 0.1,
+  desconto: 0.3,
+  historicoPreco: 0.25,
+  avaliacao: 0.18,
+  vendas: 0.12,
   loja: 0.15,
-  frete: 0.1,
-  cupom: 0.05,
+  frete: 0,
+  cupom: 0,
 } as const;
 
 const LIMIAR_NOTA_LOJA = 3.5;
@@ -92,7 +109,9 @@ function calcularDropScore(entrada: EntradaDropScore): ResultadoDropScore {
     );
   }
 
-  const produtoSemAvaliacao = entrada.quantidadeAvaliacoes === 0;
+  // Ver CORREÇÃO 4 no topo do arquivo: usa a nota (avaliacao) real, não o
+  // contador de avaliações (quantidadeAvaliacoes), que a API nunca preenche.
+  const produtoSemAvaliacao = entrada.avaliacao <= 0;
   if (produtoSemAvaliacao) {
     if (entrada.lojaAvaliacaoMedia < LIMIAR_NOTA_LOJA_PRODUTO_SEM_AVALIACAO) {
       return rejeitar(
@@ -105,14 +124,22 @@ function calcularDropScore(entrada: EntradaDropScore): ResultadoDropScore {
     );
   }
 
+  const temHistoricoAcumulado = entrada.historicoPrecos.length > 0;
   const precoDeExistiuNoHistorico =
     entrada.precoAntigo != null &&
     entrada.historicoPrecos.some((p) => Math.abs(p.preco - entrada.precoAntigo!) < 0.01);
   const promocaoVerificada = entrada.precoAntigo != null && precoDeExistiuNoHistorico;
 
   const pontoDesconto = calcularPontoDesconto(entrada.precoAtual, entrada.precoAntigo);
-  const pontoHistorico = promocaoVerificada ? 1 : entrada.precoAntigo != null ? 0.2 : 0.5;
-  const pontoAvaliacao = calcularPontoAvaliacao(entrada.avaliacao, entrada.quantidadeAvaliacoes);
+  // Ver CORREÇÃO no motor _shared pra explicação completa dos 4 casos.
+  const pontoHistorico = promocaoVerificada
+    ? 1
+    : !temHistoricoAcumulado
+      ? 0.6
+      : entrada.precoAntigo != null
+        ? 0.2
+        : 0.5;
+  const pontoAvaliacao = calcularPontoAvaliacao(entrada.avaliacao);
   const pontoVendas = calcularPontoVendas(entrada.quantidadeVendida);
   const pontoLoja = calcularPontoLoja(entrada.lojaOficial, entrada.lojaConfiabilidade);
   const pontoFrete = calcularPontoFrete(entrada.freteGratis, entrada.valorFrete, entrada.precoAtual);
@@ -155,11 +182,13 @@ function calcularPontoDesconto(precoAtual: number, precoAntigo: number | null): 
   return Math.min(percentual / 70, 1);
 }
 
-function calcularPontoAvaliacao(avaliacao: number, quantidadeAvaliacoes: number): number {
-  if (quantidadeAvaliacoes === 0) return 0.5;
-  const pontoBase = avaliacao / 5;
-  const confianca = Math.min(quantidadeAvaliacoes / 50, 1);
-  return pontoBase * (0.5 + 0.5 * confianca);
+function calcularPontoAvaliacao(avaliacao: number): number {
+  // Sem confiança ponderada por quantidade de avaliações: esse dado
+  // (quantidade_avaliacoes) nunca é preenchido pelo importador (ver
+  // CORREÇÃO 4 no topo do arquivo), então a ponderação sempre caía no
+  // mínimo. Fica só a nota normalizada, igual ao motor _shared.
+  if (avaliacao <= 0) return 0.5; // sem nota ainda — neutro, não pune nem beneficia
+  return avaliacao / 5;
 }
 
 function calcularPontoVendas(quantidadeVendida: number): number {

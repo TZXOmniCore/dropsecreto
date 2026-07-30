@@ -30,7 +30,7 @@ export function ScannerHero({ top3 }: { top3: Produto[] }) {
           </h1>
           <p className="mt-5 max-w-md text-ink-secondary">
             Todo produto que aparece aqui passou por uma análise automática de
-            preço, avaliação, vendas e histórico dos últimos 90 dias. O resto,
+            preço, avaliação, vendas e histórico do produto. O resto,
             a gente descarta.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">

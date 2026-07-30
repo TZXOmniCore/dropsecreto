@@ -187,7 +187,7 @@ export default async function ProdutoPage({ params }: { params: { id: string } }
         {semelhantes.length > 0 && (
           <div className="mt-12">
             <h2 className="mb-5 font-display text-xl font-bold text-ink-primary">Produtos semelhantes</h2>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">
+            <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">
               {semelhantes.map((p) => (
                 <ProductCard key={p.id} produto={p} />
               ))}

@@ -15,11 +15,11 @@ const DESCRICOES: Record<keyof typeof PESOS, { nome: string; descricao: string }
   },
   historicoPreco: {
     nome: 'Histórico de preço',
-    descricao: 'Cruza com os últimos 90 dias — se o preço "de" nunca existiu, o produto cai no score.',
+    descricao: 'Cruza com o histórico acumulado do produto — se o preço "de" nunca existiu, o produto cai no score.',
   },
   avaliacao: {
     nome: 'Avaliação',
-    descricao: 'Nota dos compradores, ponderada pela quantidade de avaliações.',
+    descricao: 'Nota dos compradores no produto.',
   },
   vendas: {
     nome: 'Vendas',

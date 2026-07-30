@@ -19,6 +19,9 @@ export function Footer() {
           <a href="/como-funciona" className="transition-colors hover:text-ink-primary">
             Como funciona
           </a>
+          <a href="/privacidade" className="transition-colors hover:text-ink-primary">
+            Privacidade e termos
+          </a>
         </div>
 
         <p className="mt-6 text-xs text-ink-faint">

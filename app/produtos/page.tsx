@@ -41,7 +41,7 @@ export default async function TodosProdutosPage({
           </div>
         ) : (
           <>
-            <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">
+            <div className="mt-8 grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">
               {produtos.map((p) => (
                 <ProductCard key={p.id} produto={p} />
               ))}

@@ -11,7 +11,7 @@ import Link from 'next/link';
 export function FiltroExplicado() {
   return (
     <p className="mb-4 text-xs text-ink-secondary">
-      Só aparece aqui quem passa no filtro de preço (histórico de 90 dias), avaliação, vendas e
+      Só aparece aqui quem passa no filtro de preço (comparado ao histórico do produto), avaliação, vendas e
       confiabilidade da loja —{' '}
       <Link href="/como-funciona" className="text-accent transition-opacity hover:opacity-80">
         como funciona
