@@ -31,6 +31,33 @@ divulgar o link em qualquer canal.
 - [ ] Conferir em pelo menos um celular Android e um iPhone de verdade (não
       só redimensionando o navegador do computador)
 
+## Frontend — segunda leva (personalização, filtros, carrossel, etc.)
+
+- [ ] Configurar `NEXT_PUBLIC_SITE_URL` com o domínio real assim que for
+      comprado (hoje está com um placeholder em `lib/site.ts`) — afeta o
+      link de compartilhar, o schema.org e o sitemap
+- [ ] Home: recarregar a página 2-3 vezes e conferir que os produtos da
+      vitrine mudam (não são sempre os mesmos 12)
+- [ ] Clicar em alguns produtos de uma mesma categoria (ex.: 3 produtos de
+      "gamer"), depois voltar pra home e pra busca — conferir que
+      produtos desse grupo aparecem com mais destaque
+- [ ] `/produtos` e `/busca`: testar os filtros (desconto mínimo, faixa de
+      preço, ordenar por menor preço/maior desconto/avaliação) e o botão
+      de alternar grade/lista
+- [ ] No mobile, abrir o painel de filtros (botão "Filtros") e conferir
+      que abre de baixo pra cima e fecha certo
+- [ ] Home: conferir que o carrossel de "últimas quedas de preço" passa
+      sozinho e pausa ao tocar/passar o mouse
+- [ ] Botão de compartilhar na página de produto — testar no celular (deve
+      abrir o menu nativo) e no computador (deve abrir o WhatsApp Web)
+- [ ] Abrir um produto removido/inexistente e conferir que aparece uma
+      lista de sugestões, não só uma mensagem seca
+- [ ] Conferir que o selo "novo" aparece em produto recém-importado e o
+      selo "menor preço em X dias" aparece quando for o caso
+- [ ] `next.config.js`: se as imagens da Shopee vierem de um subdomínio
+      diferente dos já cadastrados, adicionar em `remotePatterns`
+- [ ] `/melhores-da-semana` e `/sitemap.xml` abrindo sem erro
+
 ## Antes de divulgar em escala
 
 - [ ] Conferir os limites do plano gratuito do Supabase (linhas de banco,

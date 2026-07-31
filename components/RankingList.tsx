@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import type { Produto } from '@/lib/types';
 
 function formatarPreco(valor: number) {
@@ -40,11 +41,9 @@ export function RankingList({
             className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-bg-raised/40 sm:gap-4"
           >
             <span className="mono-num w-5 shrink-0 text-right text-ink-faint sm:w-6">{i + 1}</span>
-            <img
-              src={p.imagemUrl}
-              alt=""
-              className="h-12 w-12 shrink-0 rounded-lg bg-bg-raised object-cover"
-            />
+            <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-bg-raised">
+              <Image src={p.imagemUrl} alt="" fill sizes="48px" className="object-cover" />
+            </div>
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm text-ink-primary">
                 {truncarNomeMobile ? (

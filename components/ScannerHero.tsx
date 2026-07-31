@@ -2,6 +2,7 @@
 
 import { motion, useReducedMotion } from 'framer-motion';
 import Link from 'next/link';
+import Image from 'next/image';
 import type { Produto } from '@/lib/types';
 
 function formatarPreco(valor: number) {
@@ -82,11 +83,9 @@ export function ScannerHero({ top3 }: { top3: Produto[] }) {
                   className="flex items-center justify-between gap-3 rounded-xl border border-accent/40 bg-accent/5 px-4 py-3 transition-colors hover:bg-accent/10"
                 >
                   <div className="flex min-w-0 items-center gap-3">
-                    <img
-                      src={p.imagemUrl}
-                      alt=""
-                      className="h-10 w-10 shrink-0 rounded-lg bg-bg-raised object-cover"
-                    />
+                    <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-lg bg-bg-raised">
+                      <Image src={p.imagemUrl} alt="" fill sizes="40px" className="object-cover" />
+                    </div>
                     <div className="min-w-0">
                       <p className="truncate text-sm text-ink-primary">{p.nome}</p>
                       <p className="mono-num text-xs text-ink-faint">{formatarPreco(p.precoAtual)}</p>

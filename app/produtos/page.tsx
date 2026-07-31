@@ -1,9 +1,10 @@
 import Link from 'next/link';
 import { Navbar } from '@/components/Navbar';
-import { ProductCard } from '@/components/ProductCard';
+import { ProdutoGrid } from '@/components/ProdutoGrid';
+import { FiltrosBarra } from '@/components/FiltrosBarra';
 import { FiltroExplicado } from '@/components/FiltroExplicado';
 import { Footer } from '@/components/Footer';
-import { buscarTodosPorScorePaginado } from '@/lib/produtos';
+import { buscarProdutosFiltrados, type FiltrosProdutos } from '@/lib/produtos';
 
 export const revalidate = 60;
 
@@ -15,10 +16,27 @@ export const metadata = {
 export default async function TodosProdutosPage({
   searchParams,
 }: {
-  searchParams: { pagina?: string };
+  searchParams: { pagina?: string; ordenar?: string; desconto?: string; precoMin?: string; precoMax?: string };
 }) {
   const paginaAtual = Math.max(1, Number(searchParams.pagina) || 1);
-  const { produtos, total, totalPaginas } = await buscarTodosPorScorePaginado(paginaAtual);
+  const filtros: FiltrosProdutos = {
+    pagina: paginaAtual,
+    ordenar: (searchParams.ordenar as FiltrosProdutos['ordenar']) || 'relevancia',
+    descontoMinimo: Number(searchParams.desconto) || undefined,
+    precoMin: searchParams.precoMin ? Number(searchParams.precoMin) : undefined,
+    precoMax: searchParams.precoMax ? Number(searchParams.precoMax) : undefined,
+  };
+  const { produtos, total, totalPaginas } = await buscarProdutosFiltrados(filtros);
+
+  function comFiltros(pagina: number) {
+    const params = new URLSearchParams();
+    if (searchParams.ordenar) params.set('ordenar', searchParams.ordenar);
+    if (searchParams.desconto) params.set('desconto', searchParams.desconto);
+    if (searchParams.precoMin) params.set('precoMin', searchParams.precoMin);
+    if (searchParams.precoMax) params.set('precoMax', searchParams.precoMax);
+    params.set('pagina', String(pagina));
+    return `/produtos?${params.toString()}`;
+  }
 
   return (
     <main>
@@ -27,7 +45,7 @@ export default async function TodosProdutosPage({
         <h1 className="font-display text-2xl font-bold text-ink-primary">Todos os produtos</h1>
         <p className="mt-2 text-sm text-ink-secondary">
           {total > 0
-            ? `${total} produtos aprovados, do mais relevante pro menos relevante.`
+            ? `${total} produtos aprovados encontrados.`
             : 'Ordenados do mais relevante pro menos relevante.'}
         </p>
 
@@ -35,22 +53,22 @@ export default async function TodosProdutosPage({
           <FiltroExplicado />
         </div>
 
+        <div className="mt-6">
+          <FiltrosBarra />
+        </div>
+
         {produtos.length === 0 ? (
           <div className="glass mt-8 rounded-2xl p-10 text-center text-sm text-ink-secondary">
-            Nenhuma oferta aprovada ainda.
+            Nenhuma oferta encontrada com esses filtros.
           </div>
         ) : (
           <>
-            <div className="mt-8 grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">
-              {produtos.map((p) => (
-                <ProductCard key={p.id} produto={p} />
-              ))}
-            </div>
+            <ProdutoGrid produtos={produtos} />
 
             {totalPaginas > 1 && (
               <div className="mt-10 flex items-center justify-center gap-2">
                 <Link
-                  href={`/produtos?pagina=${Math.max(1, paginaAtual - 1)}`}
+                  href={comFiltros(Math.max(1, paginaAtual - 1))}
                   aria-disabled={paginaAtual <= 1}
                   className={`rounded-full border border-line px-4 py-2 text-sm transition-colors ${
                     paginaAtual <= 1
@@ -64,7 +82,7 @@ export default async function TodosProdutosPage({
                   {paginaAtual} / {totalPaginas}
                 </span>
                 <Link
-                  href={`/produtos?pagina=${Math.min(totalPaginas, paginaAtual + 1)}`}
+                  href={comFiltros(Math.min(totalPaginas, paginaAtual + 1))}
                   aria-disabled={paginaAtual >= totalPaginas}
                   className={`rounded-full border border-line px-4 py-2 text-sm transition-colors ${
                     paginaAtual >= totalPaginas

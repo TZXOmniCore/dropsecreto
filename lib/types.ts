@@ -14,6 +14,7 @@ export interface Produto {
   avaliacao: number;
   categoriaSlug: string;
   historico90d: number[];
+  historicoDiasCobertos: number;
   linkAfiliado: string;
   importadoEm: string;
   atualizadoEm: string;

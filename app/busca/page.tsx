@@ -1,7 +1,8 @@
 import { Navbar } from '@/components/Navbar';
-import { ProductCard } from '@/components/ProductCard';
+import { ResultadosBusca } from '@/components/ResultadosBusca';
+import { FiltrosBarra } from '@/components/FiltrosBarra';
 import { Footer } from '@/components/Footer';
-import { buscarProdutosPorNome } from '@/lib/produtos';
+import { buscarProdutosPorNome, type FiltrosProdutos } from '@/lib/produtos';
 
 export const metadata = {
   title: 'Buscar — Drop Secreto',
@@ -10,10 +11,16 @@ export const metadata = {
 export default async function BuscaPage({
   searchParams,
 }: {
-  searchParams: { q?: string };
+  searchParams: { q?: string; ordenar?: string; desconto?: string; precoMin?: string; precoMax?: string };
 }) {
   const termo = searchParams.q?.trim() ?? '';
-  const produtos = termo ? await buscarProdutosPorNome(termo) : [];
+  const filtros: FiltrosProdutos = {
+    ordenar: (searchParams.ordenar as FiltrosProdutos['ordenar']) || 'relevancia',
+    descontoMinimo: Number(searchParams.desconto) || undefined,
+    precoMin: searchParams.precoMin ? Number(searchParams.precoMin) : undefined,
+    precoMax: searchParams.precoMax ? Number(searchParams.precoMax) : undefined,
+  };
+  const produtos = termo ? await buscarProdutosPorNome(termo, filtros) : [];
 
   return (
     <main>
@@ -31,16 +38,20 @@ export default async function BuscaPage({
 
         {!termo ? (
           <p className="mt-4 text-sm text-ink-secondary">Digite algo na busca lá em cima.</p>
-        ) : produtos.length === 0 ? (
-          <div className="glass mt-8 rounded-2xl p-10 text-center text-sm text-ink-secondary">
-            Nenhum produto aprovado encontrado pra "{termo}".
-          </div>
         ) : (
-          <div className="mt-8 grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">
-            {produtos.map((p) => (
-              <ProductCard key={p.id} produto={p} />
-            ))}
-          </div>
+          <>
+            <div className="mt-6">
+              <FiltrosBarra />
+            </div>
+
+            {produtos.length === 0 ? (
+              <div className="glass mt-2 rounded-2xl p-10 text-center text-sm text-ink-secondary">
+                Nenhum produto aprovado encontrado pra "{termo}".
+              </div>
+            ) : (
+              <ResultadosBusca produtos={produtos} />
+            )}
+          </>
         )}
       </div>
       <Footer />

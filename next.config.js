@@ -4,6 +4,7 @@ const nextConfig = {
     remotePatterns: [
       { protocol: 'https', hostname: '**.shopee.com.br' },
       { protocol: 'https', hostname: 'cf.shopee.com.br' },
+      { protocol: 'https', hostname: 'placehold.co' },
     ],
   },
 };

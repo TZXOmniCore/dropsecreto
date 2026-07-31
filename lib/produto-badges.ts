@@ -17,3 +17,18 @@ export function produtoENovo(produto: Pick<Produto, 'importadoEm'>): boolean {
 export function produtoPoucoVendido(produto: Pick<Produto, 'quantidadeVendida'>): boolean {
   return produto.quantidadeVendida < VENDAS_PRODUTO_POUCO_VENDIDO;
 }
+
+const DIAS_MINIMO_PRA_BADGE = 3; // histórico curto demais não sustenta a afirmação
+
+// Retorna o texto do badge ("menor preço em 47 dias") só quando o preço
+// atual é de fato o mais baixo do histórico acumulado E esse histórico já
+// cobre um período com significado (evita a badge aparecer em todo
+// produto novo, que teria "menor preço" só por só ter 1 registro).
+export function textoMenorPreco(
+  produto: Pick<Produto, 'precoAtual' | 'historico90d' | 'historicoDiasCobertos'>
+): string | null {
+  if (produto.historicoDiasCobertos < DIAS_MINIMO_PRA_BADGE) return null;
+  const menorRegistrado = Math.min(...produto.historico90d);
+  if (produto.precoAtual > menorRegistrado + 0.01) return null;
+  return `menor preço em ${produto.historicoDiasCobertos} dias`;
+}

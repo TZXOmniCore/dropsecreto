@@ -1,15 +1,18 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
-import { Star, Truck, Store, ShoppingCart, AlertTriangle, CheckCircle2, SearchX } from 'lucide-react';
+import Image from 'next/image';
+import { Star, Truck, Store, ShoppingCart, AlertTriangle, CheckCircle2, SearchX, ShieldCheck } from 'lucide-react';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { ProductCard } from '@/components/ProductCard';
 import { FavoritarButton } from '@/components/FavoritarButton';
+import { CompartilharBotao } from '@/components/CompartilharBotao';
+import { RegistrarClique } from '@/components/RegistrarClique';
 import { PriceHistoryChart } from '@/components/PriceHistoryChart';
 import { AlertaProdutoInline } from '@/components/AlertaProdutoInline';
-import { buscarProdutoPorId, buscarSemelhantes } from '@/lib/produtos';
+import { buscarProdutoPorId, buscarSemelhantes, buscarTopOfertas } from '@/lib/produtos';
 import { produtoPoucoVendido } from '@/lib/produto-badges';
 import { tempoRelativo } from '@/lib/format';
+import { SITE_URL } from '@/lib/site';
 
 export const revalidate = 60;
 
@@ -38,24 +41,26 @@ export default async function ProdutoPage({ params }: { params: { id: string } }
   const produto = await buscarProdutoPorId(params.id);
 
   if (!produto) {
+    const sugestoes = await buscarTopOfertas(8);
     return (
       <main>
         <Navbar />
-        <div className="mx-auto max-w-xl px-6 py-20 text-center">
+        <div className="mx-auto max-w-6xl px-6 py-20 text-center">
           <SearchX className="mx-auto h-10 w-10 text-ink-faint" />
           <h1 className="mt-4 font-display text-xl font-bold text-ink-primary">
             Esse produto não está mais disponível
           </h1>
-          <p className="mt-2 text-sm text-ink-secondary">
+          <p className="mx-auto mt-2 max-w-md text-sm text-ink-secondary">
             Ele pode ter saído do ar na Shopee, ficado sem estoque, ou parado de passar no Drop
-            Score. Mas tem bastante oferta boa esperando você.
+            Score. Mas tem bastante oferta boa esperando você:
           </p>
-          <Link
-            href="/produtos"
-            className="mt-6 inline-block rounded-full bg-accent px-6 py-3 text-sm font-medium text-bg-base transition-opacity hover:opacity-90"
-          >
-            Ver outras ofertas
-          </Link>
+          {sugestoes.length > 0 && (
+            <div className="mt-10 grid grid-cols-2 gap-2.5 text-left sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">
+              {sugestoes.map((p) => (
+                <ProductCard key={p.id} produto={p} />
+              ))}
+            </div>
+          )}
         </div>
         <Footer />
       </main>
@@ -82,11 +87,43 @@ export default async function ProdutoPage({ params }: { params: { id: string } }
   return (
     <main>
       <Navbar />
+      <RegistrarClique categoriaSlug={produto.categoriaSlug} />
+
+      {/* Dados estruturados pro Google poder mostrar preço/nota direto no
+          resultado de busca, sem custar nada — só é dado, sem tráfego pago. */}
+      <script
+        type="application/ld+json"
+        // eslint-disable-next-line react/no-danger
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'Product',
+            name: produto.nome,
+            image: produto.imagemUrl,
+            offers: {
+              '@type': 'Offer',
+              url: `${SITE_URL}/produto/${produto.id}`,
+              priceCurrency: 'BRL',
+              price: produto.precoAtual,
+              availability: 'https://schema.org/InStock',
+            },
+            ...(produto.avaliacao > 0
+              ? {
+                  aggregateRating: {
+                    '@type': 'AggregateRating',
+                    ratingValue: produto.avaliacao,
+                    reviewCount: Math.max(produto.quantidadeVendida, 1),
+                  },
+                }
+              : {}),
+          }),
+        }}
+      />
 
       <div className="mx-auto max-w-6xl px-6 py-10">
         <div className="grid gap-10 md:grid-cols-2">
-          <div className="glass overflow-hidden rounded-2xl">
-            <img src={produto.imagemUrl} alt={produto.nome} className="aspect-square w-full object-cover" />
+          <div className="glass relative aspect-square overflow-hidden rounded-2xl">
+            <Image src={produto.imagemUrl} alt={produto.nome} fill sizes="(max-width: 768px) 100vw, 50vw" className="object-cover" priority />
           </div>
 
           <div className="flex min-w-0 flex-col">
@@ -171,9 +208,18 @@ export default async function ProdutoPage({ params }: { params: { id: string } }
                 Comprar na loja
               </a>
               <FavoritarButton produtoId={produto.id} />
+              <CompartilharBotao
+                nomeProduto={produto.nome}
+                precoFormatado={formatarPreco(produto.precoAtual)}
+                url={`${SITE_URL}/produto/${produto.id}`}
+              />
             </div>
             <p className="mt-2 text-center text-[11px] text-ink-faint">
               Você será redirecionado para a loja. Como afiliados, podemos receber comissão.
+            </p>
+            <p className="mt-1 flex items-center justify-center gap-1.5 text-center text-[11px] text-ink-faint">
+              <ShieldCheck className="h-3.5 w-3.5 shrink-0" />
+              Confie, mas confirme: o preço final é o que aparecer na loja no momento da compra.
             </p>
 
             <AlertaProdutoInline nomeProduto={produto.nome} precoAtual={produto.precoAtual} />

@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { Heart } from 'lucide-react';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
-import { ProductCard } from '@/components/ProductCard';
+import { ProdutoGrid } from '@/components/ProdutoGrid';
 import type { Produto } from '@/lib/types';
 import { buscarProdutosPorIds } from '@/lib/produtos';
 import { obterFavoritos } from '@/lib/favorites';
@@ -42,13 +42,7 @@ export default function FavoritosPage() {
           </div>
         )}
 
-        {produtos.length > 0 && (
-          <div className="mt-8 grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">
-            {produtos.map((p) => (
-              <ProductCard key={p.id} produto={p} />
-            ))}
-          </div>
-        )}
+        {produtos.length > 0 && <ProdutoGrid produtos={produtos} />}
       </div>
       <Footer />
     </main>

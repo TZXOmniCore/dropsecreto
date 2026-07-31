@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from 'next';
 import { Bricolage_Grotesque, IBM_Plex_Sans, IBM_Plex_Mono } from 'next/font/google';
 import { PwaRegister } from '@/components/PwaRegister';
+import { VoltarAoTopo } from '@/components/VoltarAoTopo';
+import { BoasVindasToast } from '@/components/BoasVindasToast';
 import './globals.css';
 
 // Três papéis tipográficos deliberados:
@@ -51,6 +53,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         {children}
         <PwaRegister />
+        <VoltarAoTopo />
+        <BoasVindasToast />
       </body>
     </html>
   );

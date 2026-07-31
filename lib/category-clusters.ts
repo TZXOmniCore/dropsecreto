@@ -36,6 +36,20 @@ const MAPA_GRUPOS: Record<string, string> = {
   criancas: 'Família & Pets',
 };
 
+// Slugs de cada grupo, na ordem que faz mais sentido pra "encher" uma
+// vitrine daquele nicho (usado pela personalização em lib/category-behavior.ts).
+export const SLUGS_POR_GRUPO: Record<string, string[]> = Object.entries(MAPA_GRUPOS).reduce(
+  (acc, [slug, grupo]) => {
+    (acc[grupo] ??= []).push(slug);
+    return acc;
+  },
+  {} as Record<string, string[]>
+);
+
+export function grupoDaCategoria(slug: string): string {
+  return MAPA_GRUPOS[slug] ?? 'Outras';
+}
+
 // Ordem fixa de exibição — não depende da ordem que veio do banco, e
 // "Outras" sempre fica por último.
 const ORDEM_GRUPOS = [
