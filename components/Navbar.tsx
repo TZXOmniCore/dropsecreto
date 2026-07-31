@@ -48,9 +48,9 @@ export function Navbar() {
   return (
     <header className="sticky top-0 z-50 glass">
       <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-4 px-4 py-3 sm:gap-6 sm:px-6 sm:py-4">
-        <a href="/" className="flex items-center gap-2.5 shrink-0">
-          <Image src="/icon-192.png" alt="" width={36} height={36} className="shrink-0 rounded-lg" />
-          <span className="font-display text-xl font-bold leading-[1.05] tracking-tight">
+        <a href="/" className="flex items-center gap-3 shrink-0">
+          <Image src="/icon-192.png" alt="" width={52} height={52} className="shrink-0" />
+          <span className="font-display text-2xl font-bold leading-[1.05] tracking-tight">
             <span className="block text-ink-primary">Drop</span>
             <span className="block text-accent">Secreto</span>
           </span>
