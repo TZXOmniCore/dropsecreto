@@ -58,6 +58,29 @@ divulgar o link em qualquer canal.
       diferente dos já cadastrados, adicionar em `remotePatterns`
 - [ ] `/melhores-da-semana` e `/sitemap.xml` abrindo sem erro
 
+## Terceira leva (analytics, segurança, jurídico, feedback)
+
+- [ ] Rodar a migração nova (`0004_feedback.sql`) no banco
+- [ ] Criar conta grátis no Google Analytics (analytics.google.com),
+      pegar o ID de medição (G-XXXXXXXXXX) e configurar
+      `NEXT_PUBLIC_GA_ID`
+- [ ] Criar conta grátis no Microsoft Clarity (clarity.microsoft.com),
+      pegar o Project ID e configurar `NEXT_PUBLIC_CLARITY_ID`
+- [ ] Criar conta grátis no Sentry (sentry.io), criar um projeto Next.js,
+      pegar o DSN e configurar `NEXT_PUBLIC_SENTRY_DSN`
+- [ ] Configurar `NEXT_PUBLIC_SITE_URL` com o domínio real
+- [ ] Rodar `npm test` e conferir que os 16 testes automatizados passam
+- [ ] Testar o botão "Dar feedback" no rodapé (enviar uma mensagem de
+      teste e conferir que aparece na tabela `feedback` do Supabase)
+- [ ] Ler a página `/privacidade` inteira de novo — agora tem seção de
+      termos de uso e aviso de menor de idade novos
+- [ ] Conferir `/robots.txt` abrindo sem erro
+- [ ] Ler `GUIA-LIMITES-SUPABASE.md` e checar o uso atual em
+      Settings → Usage no painel do Supabase
+- [ ] Se possível, considerar registro de marca ("Drop Secreto") no INPI
+      e providenciar CNPJ/e-mail de contato real — itens fora do que dá
+      pra resolver em código
+
 ## Antes de divulgar em escala
 
 - [ ] Conferir os limites do plano gratuito do Supabase (linhas de banco,
