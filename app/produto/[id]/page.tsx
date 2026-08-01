@@ -29,12 +29,17 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
   const desconto = produto.precoAntigo
     ? Math.round(((produto.precoAntigo - produto.precoAtual) / produto.precoAntigo) * 100)
     : 0;
+  const titulo = `${produto.nome} — ${formatarPreco(produto.precoAtual)} | Drop Secreto`;
+  const descricao = `${produto.nome} por ${formatarPreco(produto.precoAtual)}${
+    desconto > 0 ? ` (${desconto}% de desconto)` : ''
+  } na ${produto.lojaNome}. Analisado pelo Drop Score antes de aparecer aqui.`;
+
   return {
-    title: `${produto.nome} — ${formatarPreco(produto.precoAtual)} | Drop Secreto`,
-    description: `${produto.nome} por ${formatarPreco(produto.precoAtual)}${
-      desconto > 0 ? ` (${desconto}% de desconto)` : ''
-    } na ${produto.lojaNome}. Analisado pelo Drop Score antes de aparecer aqui.`,
-    openGraph: { images: [produto.imagemUrl] },
+    title: titulo,
+    description: descricao,
+    alternates: { canonical: `/produto/${produto.id}` },
+    openGraph: { title: titulo, description: descricao, images: [produto.imagemUrl], type: 'website' },
+    twitter: { card: 'summary_large_image', title: titulo, description: descricao, images: [produto.imagemUrl] },
   };
 }
 

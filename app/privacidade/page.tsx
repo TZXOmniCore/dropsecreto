@@ -3,6 +3,7 @@ import { Footer } from '@/components/Footer';
 
 export const metadata = {
   title: 'Privacidade e termos de uso — Drop Secreto',
+  alternates: { canonical: '/privacidade' },
 };
 
 // Cobre privacidade + termos de uso num só lugar. Escrito com cuidado

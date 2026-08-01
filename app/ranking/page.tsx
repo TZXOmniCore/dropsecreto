@@ -7,6 +7,12 @@ import { buscarRankingPorDesconto } from '@/lib/produtos';
 
 export const revalidate = 60;
 
+export const metadata = {
+  title: 'Ranking de ofertas — Drop Secreto',
+  description: 'Ranking do dia e do mês por maior desconto entre os produtos aprovados pelo Drop Score.',
+  alternates: { canonical: '/ranking' },
+};
+
 const ABAS = [
   { periodo: 'dia' as const, rotulo: 'Ranking do Dia' },
   { periodo: 'mes' as const, rotulo: 'Ranking do Mês' },

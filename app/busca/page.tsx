@@ -6,6 +6,11 @@ import { buscarProdutosPorNome, type FiltrosProdutos } from '@/lib/produtos';
 
 export const metadata = {
   title: 'Buscar — Drop Secreto',
+  // Canonical fixo (sem ?q=...&ordenar=...): evita que o Google trate
+  // cada combinação de busca/filtro como página distinta. robots.ts já
+  // bloqueia o crawling de /busca; isso cobre o caso de alguém linkar
+  // pra uma URL de busca específica de fora.
+  alternates: { canonical: '/busca' },
 };
 
 export default async function BuscaPage({

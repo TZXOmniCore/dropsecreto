@@ -4,6 +4,7 @@ import { Footer } from '@/components/Footer';
 
 export const metadata = {
   title: 'Como o Drop Score funciona — Drop Secreto',
+  alternates: { canonical: '/como-funciona' },
 };
 
 export default function ComoFuncionaPage() {

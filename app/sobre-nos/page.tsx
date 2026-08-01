@@ -3,6 +3,7 @@ import { Footer } from '@/components/Footer';
 
 export const metadata = {
   title: 'Sobre nós — Drop Secreto',
+  alternates: { canonical: '/sobre-nos' },
 };
 
 // Só a estrutura da página por enquanto — o conteúdo entra depois.

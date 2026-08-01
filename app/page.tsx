@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import type { Metadata } from 'next';
 import { Navbar } from '@/components/Navbar';
 import { ScannerHero } from '@/components/ScannerHero';
 import { CategoryChips } from '@/components/CategoryChips';
@@ -19,6 +20,12 @@ import {
 } from '@/lib/produtos';
 
 export const revalidate = 60; // atualiza a home a cada 60s
+
+// Título/descrição/Open Graph padrão já vêm do layout raiz — só o
+// canonical explícito da raiz precisa ser declarado aqui.
+export const metadata: Metadata = {
+  alternates: { canonical: '/' },
+};
 
 export default async function HomePage() {
   const [categorias, poolTopOfertas, flashDeals, ultimasQuedas, top3Descontos] =

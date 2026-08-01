@@ -8,6 +8,7 @@ export const revalidate = 60;
 
 export const metadata = {
   title: 'Categorias — Drop Secreto',
+  alternates: { canonical: '/categorias' },
 };
 
 export default async function CategoriasPage() {

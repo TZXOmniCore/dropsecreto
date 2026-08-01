@@ -17,6 +17,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   return {
     title: `${categoria.nome} — ofertas verificadas | Drop Secreto`,
     description: `Ofertas de ${categoria.nome} aprovadas pelo Drop Score — preço, avaliação, vendas e histórico já checados.`,
+    alternates: { canonical: `/categoria/${categoria.slug}` },
   };
 }
 

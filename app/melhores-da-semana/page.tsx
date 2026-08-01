@@ -9,6 +9,7 @@ export const metadata = {
   title: 'Melhores ofertas da semana — Drop Secreto',
   description:
     'As ofertas com melhor Drop Score verificadas nos últimos 7 dias — preço, avaliação, vendas e histórico já checados.',
+  alternates: { canonical: '/melhores-da-semana' },
 };
 
 // Página gerada sozinha a partir do próprio banco, sem ninguém escrever

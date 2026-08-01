@@ -11,6 +11,7 @@ export const revalidate = 60;
 export const metadata = {
   title: 'Todos os produtos — Drop Secreto',
   description: 'Todos os produtos aprovados pelo Drop Score, ordenados do mais relevante pro menos relevante.',
+  alternates: { canonical: '/produtos' },
 };
 
 export default async function TodosProdutosPage({
