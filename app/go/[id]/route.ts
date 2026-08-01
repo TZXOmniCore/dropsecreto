@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabase-admin';
+import { getSupabaseAdmin } from '@/lib/supabase-admin';
 
 // ============================================================
 // DROP SECRETO — Redirecionador de afiliado
@@ -31,6 +31,8 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
   if (!id || !UUID_REGEX.test(id)) {
     return NextResponse.redirect(`${origin}/`, { status: 302 });
   }
+
+  const supabaseAdmin = getSupabaseAdmin();
 
   const { data: produto, error } = await supabaseAdmin
     .from('produtos')
