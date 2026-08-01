@@ -20,6 +20,11 @@ const nextConfig = {
           // Impede o site de ser carregado dentro de um <iframe> em outro
           // domínio (proteção contra clickjacking).
           { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
+          // Força HTTPS em toda visita futura (inclusive digitando http://
+          // na barra de endereço) por 2 anos, e em todos os subdomínios.
+          // A Vercel já redireciona http->https por padrão; isso reforça
+          // no próprio navegador, sem depender desse redirect a cada visita.
+          { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains' },
           // Impede o navegador de "adivinhar" o tipo de um arquivo servido
           // com Content-Type errado.
           { key: 'X-Content-Type-Options', value: 'nosniff' },

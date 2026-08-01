@@ -15,7 +15,6 @@ export interface Produto {
   categoriaSlug: string;
   historico90d: number[];
   historicoDiasCobertos: number;
-  linkAfiliado: string;
   importadoEm: string;
   atualizadoEm: string;
   promocaoVerificada: boolean | null;

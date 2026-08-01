@@ -25,7 +25,6 @@ const CAMPOS_PRODUTO = `
   frete_gratis,
   quantidade_vendida,
   avaliacao,
-  link_afiliado,
   cupom_id,
   importado_em,
   atualizado_em,
@@ -56,7 +55,6 @@ interface ProdutoRow {
   frete_gratis: boolean | null;
   quantidade_vendida: number | null;
   avaliacao: number | null;
-  link_afiliado: string;
   cupom_id: string | null;
   importado_em: string;
   atualizado_em: string;
@@ -118,7 +116,6 @@ function mapearProduto(row: ProdutoRow): Produto {
     categoriaSlug: row.categorias?.slug ?? '',
     historico90d,
     historicoDiasCobertos,
-    linkAfiliado: row.link_afiliado,
     importadoEm: row.importado_em,
     atualizadoEm: row.atualizado_em,
     promocaoVerificada: row.promocao_verificada,

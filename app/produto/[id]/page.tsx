@@ -205,7 +205,6 @@ export default async function ProdutoPage({ params }: { params: { id: string } }
               <BotaoComprar
                 produtoId={produto.id}
                 produtoNome={produto.nome}
-                linkAfiliado={produto.linkAfiliado}
               />
               <FavoritarButton produtoId={produto.id} />
               <CompartilharBotao
