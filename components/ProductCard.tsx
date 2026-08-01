@@ -9,6 +9,7 @@ import { ehFavorito, alternarFavorito } from '@/lib/favorites';
 import { produtoPoucoVendido, produtoENovo, textoMenorPreco } from '@/lib/produto-badges';
 import { foiVisitado, registrarVisita } from '@/lib/visited';
 import { tempoRelativo } from '@/lib/format';
+import { eventos } from '@/lib/analytics';
 
 function formatarPreco(valor: number) {
   return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -54,6 +55,7 @@ export function ProductCard({
     e.stopPropagation();
     const atualizados = alternarFavorito(produto.id);
     setFavoritado(atualizados.includes(produto.id));
+    eventos.favoritar(produto.id, atualizados.includes(produto.id));
   }
 
   const desconto = produto.precoAntigo

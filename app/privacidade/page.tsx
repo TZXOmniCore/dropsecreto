@@ -5,9 +5,10 @@ export const metadata = {
   title: 'Privacidade e termos de uso — Drop Secreto',
 };
 
-// Versão mínima pro lançamento: cobre o essencial (o que é coletado, o
-// papel de afiliado, onde a compra acontece). Revisar com atenção antes
-// de divulgar em escala — isto não substitui orientação jurídica.
+// Cobre privacidade + termos de uso num só lugar. Escrito com cuidado
+// pra ser real e específico (não é texto genérico de gerador), mas não
+// substitui revisão de um advogado antes de divulgar o site em escala —
+// isso aqui é redação de boa-fé, não parecer jurídico.
 export default function PrivacidadePage() {
   return (
     <main>
@@ -63,9 +64,14 @@ export default function PrivacidadePage() {
               Não é necessário criar conta nem fazer login pra usar o site. Algumas
               preferências (categorias que você mais clica, favoritos, forma de visualizar
               os produtos) ficam salvas só no seu próprio aparelho, no navegador, e servem
-              pra personalizar o que aparece pra você. Esses dados não são enviados pra
-              nenhum servidor nem compartilhados com terceiros, e você pode apagá-los a
-              qualquer momento limpando os dados do site no navegador.
+              pra personalizar o que aparece pra você — isso não sai do seu aparelho, e você
+              pode apagar a qualquer momento limpando os dados do site no navegador.
+            </p>
+            <p className="mt-2">
+              Além disso, usamos ferramentas de análise de audiência (que mostram quantas
+              pessoas visitam o site e quais páginas são mais acessadas) e de monitoramento
+              de erros técnicos, que recebem dados de uso de forma agregada — sem nome, e-mail
+              ou qualquer dado que identifique você diretamente.
             </p>
           </section>
 
@@ -81,10 +87,61 @@ export default function PrivacidadePage() {
           </section>
 
           <section>
+            <h2 className="font-display text-base font-semibold text-ink-primary">
+              Uso por menores de idade
+            </h2>
+            <p className="mt-2">
+              O Drop Secreto não é direcionado a menores de 18 anos e não coleta,
+              intencionalmente, nenhum dado que identifique uma criança ou adolescente. O
+              fato de existirem categorias de produtos infantis no catálogo (ex.: brinquedos,
+              roupas) não significa que o site seja destinado ao uso por menores — o público
+              do site é o responsável que faz a compra.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="font-display text-base font-semibold text-ink-primary">
+              Isenção de responsabilidade sobre preço e disponibilidade
+            </h2>
+            <p className="mt-2">
+              Os preços, descontos e a disponibilidade dos produtos são definidos
+              exclusivamente pelas lojas parceiras e podem mudar a qualquer momento — inclusive
+              entre o momento em que a oferta foi verificada aqui e o momento em que você
+              clica. O Drop Secreto se esforça pra manter as informações atualizadas, mas não
+              garante que o preço exibido será exatamente o cobrado no fechamento da compra.
+              Confirme sempre o preço final na página da loja antes de finalizar.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="font-display text-base font-semibold text-ink-primary">
+              Uso aceitável do site
+            </h2>
+            <p className="mt-2">
+              O conteúdo do Drop Secreto (marca, layout, textos e a lógica do Drop Score) não
+              pode ser copiado, redistribuído ou usado para criar um serviço concorrente sem
+              autorização. Não é permitido usar robôs, scrapers ou qualquer automação pra
+              extrair dados do site em massa, nem tentar burlar, sobrecarregar ou interferir no
+              funcionamento normal da plataforma.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="font-display text-base font-semibold text-ink-primary">
+              Foro
+            </h2>
+            <p className="mt-2">
+              Eventuais disputas relacionadas ao uso deste site serão resolvidas conforme a
+              legislação brasileira.
+            </p>
+          </section>
+
+          <section>
             <h2 className="font-display text-base font-semibold text-ink-primary">Contato</h2>
             <p className="mt-2">
-              Dúvidas sobre esta página ou sobre como o site funciona: [e-mail de contato a
-              definir].
+              Encontrou uma oferta que não parece correta, ou tem uma sugestão? Use o botão
+              de feedback no rodapé do site. Um e-mail de contato formal será divulgado aqui
+              assim que estiver disponível.
             </p>
           </section>
         </div>

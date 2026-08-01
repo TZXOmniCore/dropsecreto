@@ -1,8 +1,10 @@
 'use client';
 
 import { Share2 } from 'lucide-react';
+import { eventos } from '@/lib/analytics';
 
 interface Props {
+  produtoId?: string;
   nomeProduto: string;
   precoFormatado: string;
   url: string;
@@ -13,9 +15,10 @@ interface Props {
 // suporte (a maioria dos navegadores de desktop), cai direto num link
 // do WhatsApp com a mensagem pronta — sem precisar de nenhuma
 // biblioteca nova.
-export function CompartilharBotao({ nomeProduto, precoFormatado, url }: Props) {
+export function CompartilharBotao({ produtoId, nomeProduto, precoFormatado, url }: Props) {
   async function compartilhar(e: React.MouseEvent) {
     e.preventDefault();
+    if (produtoId) eventos.compartilhar(produtoId);
     const texto = `Achei isso no Drop Secreto: ${nomeProduto} por ${precoFormatado}`;
 
     if (typeof navigator !== 'undefined' && navigator.share) {

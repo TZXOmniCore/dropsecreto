@@ -1,3 +1,5 @@
+import { BotaoFeedback } from './BotaoFeedback';
+
 export function Footer() {
   const anoAtual = new Date().getFullYear();
 
@@ -12,7 +14,7 @@ export function Footer() {
           Como afiliados, podemos receber comissão por compras feitas através dos links deste site.
         </p>
 
-        <div className="mt-6 flex flex-wrap gap-x-4 gap-y-2 text-xs text-ink-secondary">
+        <div className="mt-6 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-ink-secondary">
           <a href="/sobre-nos" className="transition-colors hover:text-ink-primary">
             Sobre nós
           </a>
@@ -22,6 +24,7 @@ export function Footer() {
           <a href="/privacidade" className="transition-colors hover:text-ink-primary">
             Privacidade e termos
           </a>
+          <BotaoFeedback />
         </div>
 
         <p className="mt-6 text-xs text-ink-faint">

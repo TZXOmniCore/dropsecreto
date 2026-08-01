@@ -1,11 +1,12 @@
 import type { Metadata } from 'next';
 import Image from 'next/image';
-import { Star, Truck, Store, ShoppingCart, AlertTriangle, CheckCircle2, SearchX, ShieldCheck } from 'lucide-react';
+import { Star, Truck, Store, AlertTriangle, CheckCircle2, SearchX, ShieldCheck } from 'lucide-react';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { ProductCard } from '@/components/ProductCard';
 import { FavoritarButton } from '@/components/FavoritarButton';
 import { CompartilharBotao } from '@/components/CompartilharBotao';
+import { BotaoComprar } from '@/components/BotaoComprar';
 import { RegistrarClique } from '@/components/RegistrarClique';
 import { PriceHistoryChart } from '@/components/PriceHistoryChart';
 import { AlertaProdutoInline } from '@/components/AlertaProdutoInline';
@@ -201,14 +202,14 @@ export default async function ProdutoPage({ params }: { params: { id: string } }
             </div>
 
             <div className="mt-8 flex items-center gap-3">
-              <a href={produto.linkAfiliado}
-                className="flex flex-1 items-center justify-center gap-2 rounded-full bg-accent px-6 py-3.5 text-sm font-semibold text-bg-base transition-opacity hover:opacity-90"
-              >
-                <ShoppingCart className="h-4 w-4" />
-                Comprar na loja
-              </a>
+              <BotaoComprar
+                produtoId={produto.id}
+                produtoNome={produto.nome}
+                linkAfiliado={produto.linkAfiliado}
+              />
               <FavoritarButton produtoId={produto.id} />
               <CompartilharBotao
+                produtoId={produto.id}
                 nomeProduto={produto.nome}
                 precoFormatado={formatarPreco(produto.precoAtual)}
                 url={`${SITE_URL}/produto/${produto.id}`}

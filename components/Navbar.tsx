@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Search, Trophy, Heart, LayoutGrid, Sparkles } from 'lucide-react';
+import { eventos } from '@/lib/analytics';
 
 // Lista fixa das 16 categorias — serve de base pro autocomplete da busca
 // sem precisar de nenhuma consulta extra ao banco (a taxonomia é
@@ -37,6 +38,7 @@ export function Navbar() {
     const limpo = termo.trim();
     if (!limpo) return;
     setSugestoesAbertas(false);
+    eventos.buscar(limpo);
     router.push(`/busca?q=${encodeURIComponent(limpo)}`);
   }
 
