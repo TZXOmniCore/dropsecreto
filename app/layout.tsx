@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { Bricolage_Grotesque, IBM_Plex_Sans, IBM_Plex_Mono } from 'next/font/google';
+import { Analytics as VercelAnalytics } from '@vercel/analytics/next';
 import { PwaRegister } from '@/components/PwaRegister';
 import { Analytics } from '@/components/Analytics';
 import { VoltarAoTopo } from '@/components/VoltarAoTopo';
@@ -90,6 +91,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {children}
         <PwaRegister />
         <Analytics />
+        <VercelAnalytics />
         <VoltarAoTopo />
         <BoasVindasToast />
       </body>
