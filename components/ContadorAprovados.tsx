@@ -5,7 +5,7 @@ import { contarAprovadosRecentes } from '@/lib/produtos';
 // ser usado em nenhuma página): esse aqui é uma contagem de verdade,
 // puxada do banco a cada carregamento — só aparece se houver pelo menos
 // 1 produto novo nas últimas horas, pra nunca soar forçado.
-export async function ContadorAprovados({ horas = 2 }: { horas?: number }) {
+export async function ContadorAprovados({ horas = 2 }: { readonly horas?: number }) {
   const total = await contarAprovadosRecentes(horas);
   if (total === 0) return null;
 

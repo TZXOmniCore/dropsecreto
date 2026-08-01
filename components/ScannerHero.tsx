@@ -17,7 +17,7 @@ function calcularDesconto(p: Produto) {
 // O quadro ao lado do texto de abertura mostra os 3 produtos com maior
 // desconto de toda a plataforma no momento — não é mais uma demonstração
 // fake, é dado real (ver buscarTop3MaioresDescontos em lib/produtos.ts).
-export function ScannerHero({ top3 }: { top3: Produto[] }) {
+export function ScannerHero({ top3 }: { readonly top3: Produto[] }) {
   const reduzMovimento = useReducedMotion();
 
   return (

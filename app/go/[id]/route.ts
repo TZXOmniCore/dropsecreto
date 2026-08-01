@@ -43,7 +43,11 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
   // Produto não existe, foi removido, ou não está mais aprovado/ativo —
   // manda pra página do produto, que já sabe mostrar "não disponível"
   // com sugestões, em vez de estourar erro.
-  if (error || !produto || produto.status !== 'aprovado' || !produto.ativo || !produto.link_afiliado) {
+  if (error || !produto) {
+    return NextResponse.redirect(`${origin}/produto/${id}`, { status: 302 });
+  }
+
+  if (produto.status !== 'aprovado' || !produto.ativo || !produto.link_afiliado) {
     return NextResponse.redirect(`${origin}/produto/${id}`, { status: 302 });
   }
 

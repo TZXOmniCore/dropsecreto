@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import type { Categoria } from '@/lib/types';
 import { ordenarPorComportamento, registrarCliqueCategoria } from '@/lib/category-behavior';
 
-export function CategoryChips({ categorias }: { categorias: Categoria[] }) {
+export function CategoryChips({ categorias }: { readonly categorias: Categoria[] }) {
   // Primeira renderização usa a ordem original (igual ao servidor, evita
   // mismatch de hidratação). Depois de montar no navegador, reordena com
   // base no histórico de cliques salvo — as categorias que a pessoa mais

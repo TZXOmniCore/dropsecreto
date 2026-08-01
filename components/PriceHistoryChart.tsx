@@ -2,12 +2,12 @@ function formatarPreco(valor: number) {
   return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
 
-export function PriceHistoryChart({ dados }: { dados: number[] }) {
+export function PriceHistoryChart({ dados }: { readonly dados: number[] }) {
   const min = Math.min(...dados);
   const max = Math.max(...dados);
   const media = dados.reduce((a, b) => a + b, 0) / dados.length;
   const amplitude = max - min || 1;
-  const atual = dados[dados.length - 1];
+  const atual = dados.at(-1)!;
 
   const alturaGrafico = 120;
   const pontos = dados

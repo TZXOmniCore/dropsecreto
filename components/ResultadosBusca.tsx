@@ -11,7 +11,7 @@ import { grupoDaCategoria } from '@/lib/category-clusters';
 // dominante no histórico de cliques (ex.: entrou bastante em produto de
 // Tecnologia), os resultados desse grupo sobem pro topo — dentro de cada
 // bloco, a relevância original é preservada (sort é estável).
-export function ResultadosBusca({ produtos }: { produtos: Produto[] }) {
+export function ResultadosBusca({ produtos }: { readonly produtos: Produto[] }) {
   const [ordenados, setOrdenados] = useState(produtos);
 
   useEffect(() => {

@@ -16,7 +16,13 @@ export const metadata = {
 export default async function BuscaPage({
   searchParams,
 }: {
-  searchParams: { q?: string; ordenar?: string; desconto?: string; precoMin?: string; precoMax?: string };
+  readonly searchParams: {
+    readonly q?: string;
+    readonly ordenar?: string;
+    readonly desconto?: string;
+    readonly precoMin?: string;
+    readonly precoMax?: string;
+  };
 }) {
   const termo = searchParams.q?.trim() ?? '';
   const filtros: FiltrosProdutos = {

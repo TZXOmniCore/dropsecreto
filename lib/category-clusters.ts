@@ -40,7 +40,8 @@ const MAPA_GRUPOS: Record<string, string> = {
 // vitrine daquele nicho (usado pela personalização em lib/category-behavior.ts).
 export const SLUGS_POR_GRUPO: Record<string, string[]> = Object.entries(MAPA_GRUPOS).reduce(
   (acc, [slug, grupo]) => {
-    (acc[grupo] ??= []).push(slug);
+    acc[grupo] ??= [];
+    acc[grupo].push(slug);
     return acc;
   },
   {} as Record<string, string[]>

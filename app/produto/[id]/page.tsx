@@ -43,7 +43,7 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
   };
 }
 
-export default async function ProdutoPage({ params }: { params: { id: string } }) {
+export default async function ProdutoPage({ params }: { readonly params: { id: string } }) {
   const produto = await buscarProdutoPorId(params.id);
 
   if (!produto) {
@@ -185,8 +185,8 @@ export default async function ProdutoPage({ params }: { params: { id: string } }
 
             {economiaReais > 0 && (
               <p className="mt-1 text-sm text-accent">
-                economize <span className="mono-num">{formatarPreco(economiaReais)}</span> (
-                <span className="mono-num">{economiaPercentual}%</span>)
+                economize <span className="mono-num">{formatarPreco(economiaReais)}</span>{' '}
+                (<span className="mono-num">{economiaPercentual}%</span>)
               </p>
             )}
 

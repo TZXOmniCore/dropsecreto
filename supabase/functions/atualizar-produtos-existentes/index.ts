@@ -80,7 +80,7 @@ function calcularPrecoAntigoAproximado(precoAtual: number, descontoPercentual: n
 // UM item específico, em vez de varrer o feed inteiro — é o que permite
 // esta função ser "cirúrgica" ao invés de esperar a vez do produto no
 // ciclo de páginas do importador.
-async function buscarOfertaPorItem(shopId: number, itemId: number): Promise<any | null> {
+async function buscarOfertaPorItem(shopId: number, itemId: number): Promise<any> {
   const query = `
     query FetchItem($shopId: Int64, $itemId: Int64) {
       productOfferV2(shopId: $shopId, itemId: $itemId, page: 1, limit: 1) {
@@ -161,7 +161,7 @@ Deno.serve(async () => {
         return;
       }
 
-      const precoAtual = parseFloat(oferta.priceMin);
+      const precoAtual = Number.parseFloat(oferta.priceMin);
       const precoAntigo = calcularPrecoAntigoAproximado(precoAtual, oferta.priceDiscountRate);
 
       const { error } = await supabase
@@ -170,7 +170,7 @@ Deno.serve(async () => {
           preco_atual: precoAtual,
           preco_antigo: precoAntigo,
           quantidade_vendida: oferta.sales,
-          avaliacao: parseFloat(oferta.ratingStar) || 0,
+          avaliacao: Number.parseFloat(oferta.ratingStar) || 0,
           // atualizado_em e historico_precos são automáticos (trigger) —
           // não precisa (e não deve) setar aqui.
         })
@@ -182,9 +182,9 @@ Deno.serve(async () => {
       } else {
         atualizados++;
       }
-    } catch (erro) {
+    } catch (error_) {
       falhasApi++;
-      console.error(`Erro ao rechecar item ${p.shopee_item_id} (loja ${shopId}):`, erro);
+      console.error(`Erro ao rechecar item ${p.shopee_item_id} (loja ${shopId}):`, error_);
       // Mesmo num erro de verdade (rede, timeout, etc.), toca a fila —
       // senão um erro passageiro também travaria esse produto na frente
       // pra sempre, do mesmo jeito que o bug do "sem loja" fazia.

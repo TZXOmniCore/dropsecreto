@@ -15,7 +15,7 @@ function formatarPreco(valor: number) {
   return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
 
-function Sparkline({ dados }: { dados: number[] }) {
+function Sparkline({ dados }: { readonly dados: number[] }) {
   const min = Math.min(...dados);
   const max = Math.max(...dados);
   const amplitude = max - min || 1;
@@ -39,8 +39,8 @@ export function ProductCard({
   produto,
   layout = 'grade',
 }: {
-  produto: Produto;
-  layout?: 'grade' | 'lista';
+  readonly produto: Produto;
+  readonly layout?: 'grade' | 'lista';
 }) {
   const [favoritado, setFavoritado] = useState(false);
   const [visitado, setVisitado] = useState(false);

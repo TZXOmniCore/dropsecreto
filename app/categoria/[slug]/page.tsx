@@ -21,7 +21,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   };
 }
 
-export default async function CategoriaPage({ params }: { params: { slug: string } }) {
+export default async function CategoriaPage({ params }: { readonly params: { slug: string } }) {
   const categorias = await buscarCategorias();
   const categoria = categorias.find((c) => c.slug === params.slug);
   if (!categoria) notFound();

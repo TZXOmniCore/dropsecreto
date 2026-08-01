@@ -5,7 +5,13 @@ import Link from 'next/link';
 import { Bell, Check } from 'lucide-react';
 import { salvarAlerta, pedirPermissaoNotificacao } from '@/lib/notifications';
 
-export function AlertaProdutoInline({ nomeProduto, precoAtual }: { nomeProduto: string; precoAtual: number }) {
+export function AlertaProdutoInline({
+  nomeProduto,
+  precoAtual,
+}: {
+  readonly nomeProduto: string;
+  readonly precoAtual: number;
+}) {
   const [precoAlvo, setPrecoAlvo] = useState(String(Math.floor(precoAtual)));
   const [criado, setCriado] = useState(false);
   const [permissaoNegada, setPermissaoNegada] = useState(false);

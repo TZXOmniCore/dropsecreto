@@ -5,11 +5,12 @@ import type { Produto } from '@/lib/types';
 import { ProdutoGrid } from './ProdutoGrid';
 import { grupoPreferido } from '@/lib/category-behavior';
 import { grupoDaCategoria } from '@/lib/category-clusters';
+import { randomFloat } from '@/lib/random';
 
 function embaralhar<T>(lista: T[]): T[] {
   const copia = [...lista];
   for (let i = copia.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = Math.floor(randomFloat() * (i + 1));
     [copia[i], copia[j]] = [copia[j], copia[i]];
   }
   return copia;
@@ -22,7 +23,13 @@ function embaralhar<T>(lista: T[]): T[] {
 // - se a pessoa tem um grupo de categoria dominante no histórico de
 //   cliques, esse grupo ganha mais espaço na amostra (sem virar 100% dele
 //   — mantém variedade real, só dá "mais ênfase", como foi pedido).
-export function VitrinePersonalizada({ pool, quantidade = 12 }: { pool: Produto[]; quantidade?: number }) {
+export function VitrinePersonalizada({
+  pool,
+  quantidade = 12,
+}: {
+  readonly pool: Produto[];
+  readonly quantidade?: number;
+}) {
   // Primeira renderização usa os top N originais (igual ao servidor, evita
   // mismatch de hidratação); depois de montar, troca pela seleção
   // personalizada/embaralhada.

@@ -6,7 +6,7 @@ import { ehFavorito, alternarFavorito } from '@/lib/favorites';
 
 // Botão de favoritar da página do produto (separado do coraçãozinho do
 // ProductCard, que já existe nos cards de listagem).
-export function FavoritarButton({ produtoId }: { produtoId: string }) {
+export function FavoritarButton({ produtoId }: { readonly produtoId: string }) {
   const [favoritado, setFavoritado] = useState(false);
 
   useEffect(() => {

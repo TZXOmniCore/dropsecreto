@@ -241,11 +241,11 @@ async function buscarNotaLoja(shopId: number): Promise<number | null> {
     // bits com segurança e a API rejeitava com "wrong type" em toda chamada,
     // fazendo avaliacao_media da loja nunca ser preenchida de verdade).
     const dados = await chamarGraphQL(query, { shopId: String(shopId) });
-    const nota = parseFloat(dados?.shopOfferV2?.nodes?.[0]?.ratingStar) || null;
+    const nota = Number.parseFloat(dados?.shopOfferV2?.nodes?.[0]?.ratingStar) || null;
     cacheNotaLoja.set(shopId, nota);
     return nota;
-  } catch (erro) {
-    console.error(`Erro ao buscar nota da loja ${shopId}:`, erro);
+  } catch (error_) {
+    console.error(`Erro ao buscar nota da loja ${shopId}:`, error_);
     cacheNotaLoja.set(shopId, null);
     return null;
   }
@@ -351,8 +351,8 @@ async function importarLote(
     try {
       const lojaId = await garantirLoja(supabase, shopId, info.shopName, info.shopOficial);
       lojaIdPorShopId.set(shopId, lojaId);
-    } catch (erro) {
-      console.error(`Erro ao resolver loja ${shopId}:`, erro);
+    } catch (error_) {
+      console.error(`Erro ao resolver loja ${shopId}:`, error_);
       lojaIdPorShopId.set(shopId, null);
     }
   });
@@ -361,7 +361,7 @@ async function importarLote(
 
   await mapComLimite(nodes, 8, async (node, indice) => {
     try {
-      const precoAtual = parseFloat(node.priceMin);
+      const precoAtual = Number.parseFloat(node.priceMin);
       const precoAntigo = calcularPrecoAntigoAproximado(precoAtual, node.priceDiscountRate);
 
       if (indice < LOG_AMOSTRA_PRECO) {
@@ -387,7 +387,7 @@ async function importarLote(
           imagem_principal_url: node.imageUrl,
           preco_atual: precoAtual,
           preco_antigo: precoAntigo,
-          avaliacao: parseFloat(node.ratingStar) || 0,
+          avaliacao: Number.parseFloat(node.ratingStar) || 0,
           quantidade_vendida: node.sales,
           link_afiliado: node.offerLink,
           link_original: node.productLink,
@@ -404,8 +404,8 @@ async function importarLote(
 
       if (error) throw error;
       importados++;
-    } catch (erro) {
-      console.error(`Erro ao importar item ${node.itemId}:`, erro);
+    } catch (error_) {
+      console.error(`Erro ao importar item ${node.itemId}:`, error_);
     }
   });
 
@@ -480,15 +480,15 @@ Deno.serve(async () => {
         iniciado_em: inicio,
         finalizado_em: new Date().toISOString(),
       });
-    } catch (erroDeLog) {
-      console.error('Falha ao gravar log de sucesso em logs_importacao:', erroDeLog);
+    } catch (error_) {
+      console.error('Falha ao gravar log de sucesso em logs_importacao:', error_);
     }
 
     return new Response(
       JSON.stringify({ ok: true, importados: totalImportados, pagina, proximaPagina }),
       { status: 200 }
     );
-  } catch (erro) {
+  } catch (error_) {
     // Mesmo em erro, tenta preservar a página em que estava (não volta a
     // importação inteira pro zero por causa de uma falha pontual).
     await salvarProximaPagina(supabase, pagina).catch(() => {});
@@ -502,14 +502,14 @@ Deno.serve(async () => {
       await supabase.from('logs_importacao').insert({
         fonte: 'shopee_feed',
         produtos_importados: totalImportados,
-        erro: String(erro),
+        erro: String(error_),
         iniciado_em: inicio,
         finalizado_em: new Date().toISOString(),
       });
-    } catch (erroDeLog) {
-      console.error('Falha ao gravar log de erro em logs_importacao:', erroDeLog);
+    } catch (error_) {
+      console.error('Falha ao gravar log de erro em logs_importacao:', error_);
     }
 
-    return new Response(JSON.stringify({ ok: false, erro: String(erro) }), { status: 500 });
+    return new Response(JSON.stringify({ ok: false, erro: String(error_) }), { status: 500 });
   }
 });

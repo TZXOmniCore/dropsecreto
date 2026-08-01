@@ -28,9 +28,9 @@ export function RankingList({
   variante = 'score',
   truncarNomeMobile = false,
 }: {
-  produtos: Produto[];
-  variante?: 'score' | 'desconto';
-  truncarNomeMobile?: boolean;
+  readonly produtos: Produto[];
+  readonly variante?: 'score' | 'desconto';
+  readonly truncarNomeMobile?: boolean;
 }) {
   return (
     <ol className="divide-y divide-line rounded-2xl border border-line">

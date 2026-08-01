@@ -52,7 +52,12 @@ export function BotaoFeedback() {
       </button>
 
       {aberto && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true">
+        <dialog
+          open
+          aria-modal="true"
+          aria-label="Feedback"
+          className="fixed inset-0 z-50 m-0 flex h-full max-h-none w-full max-w-none items-center justify-center border-0 bg-transparent p-4"
+        >
           <div className="absolute inset-0 bg-black/60" onClick={() => setAberto(false)} aria-hidden />
           <div className="glass relative w-full max-w-sm rounded-2xl p-5">
             <div className="mb-4 flex items-center justify-between">
@@ -103,7 +108,7 @@ export function BotaoFeedback() {
               </form>
             )}
           </div>
-        </div>
+        </dialog>
       )}
     </>
   );

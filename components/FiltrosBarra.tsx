@@ -29,7 +29,13 @@ function construirHref(pathname: string, atuais: URLSearchParams, mudancas: Reco
   return query ? `${pathname}?${query}` : pathname;
 }
 
-function Controles({ pathname, atuais }: { pathname: string; atuais: URLSearchParams }) {
+function Controles({
+  pathname,
+  atuais,
+}: {
+  readonly pathname: string;
+  readonly atuais: URLSearchParams;
+}) {
   const ordenarAtual = atuais.get('ordenar') ?? 'relevancia';
   const descontoAtual = Number(atuais.get('desconto') ?? 0);
 
@@ -151,7 +157,12 @@ export function FiltrosBarra() {
         </button>
 
         {painelAberto && (
-          <div className="fixed inset-0 z-50 flex items-end" role="dialog" aria-modal="true">
+          <dialog
+            open
+            aria-modal="true"
+            aria-label="Filtros"
+            className="fixed inset-0 z-50 m-0 flex h-full max-h-none w-full max-w-none items-end border-0 bg-transparent p-0"
+          >
             <div
               className="absolute inset-0 bg-black/60"
               onClick={() => setPainelAberto(false)}
@@ -171,7 +182,7 @@ export function FiltrosBarra() {
               </div>
               <Controles pathname={pathname} atuais={atuais} />
             </div>
-          </div>
+          </dialog>
         )}
       </div>
     </>

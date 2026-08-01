@@ -49,7 +49,7 @@ export function HowItWorks() {
     <section id="como-funciona" className="border-b border-line py-10 sm:py-16">
       <div className="mx-auto max-w-7xl px-6">
         <span className="mb-4 inline-flex w-fit items-center gap-2 rounded-full border border-line px-3 py-1 text-xs text-ink-secondary">
-          <span className="h-1.5 w-1.5 rounded-full bg-accent" />
+          <span className="h-1.5 w-1.5 rounded-full bg-accent" />{' '}
           motor de análise ativo
         </span>
 

@@ -7,8 +7,8 @@ export function BotaoComprar({
   produtoId,
   produtoNome,
 }: {
-  produtoId: string;
-  produtoNome: string;
+  readonly produtoId: string;
+  readonly produtoNome: string;
 }) {
   return (
     <a

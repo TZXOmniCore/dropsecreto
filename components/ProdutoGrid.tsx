@@ -10,7 +10,13 @@ import { obterModoVisualizacao, salvarModoVisualizacao, type ModoVisualizacao } 
 // (home, /produtos, /categoria, /produto, /favoritos, /busca) e
 // acrescenta o alternador grade/lista pedido — a escolha fica salva por
 // aparelho, sem precisar de login.
-export function ProdutoGrid({ produtos, mostrarAlternador = true }: { produtos: Produto[]; mostrarAlternador?: boolean }) {
+export function ProdutoGrid({
+  produtos,
+  mostrarAlternador = true,
+}: {
+  readonly produtos: Produto[];
+  readonly mostrarAlternador?: boolean;
+}) {
   const [modo, setModo] = useState<ModoVisualizacao>('grade');
 
   useEffect(() => {

@@ -111,20 +111,11 @@ export function calcularDropScore(entrada: EntradaDropScore): ResultadoDropScore
 
   // --- Pontuação por critério, cada um normalizado entre 0 e 1 ---
   const pontoDesconto = calcularPontoDesconto(entrada.precoAtual, entrada.precoAntigo);
-  // 1 = preço "de" bate com o histórico (promoção confirmada).
-  // 0.6 = produto ainda sem histórico acumulado (catálogo novo/recém
-  //       importado) — não é culpa do produto, não deve ser punido como
-  //       se fosse suspeito, mas também não ganha o ponto máximo.
-  // 0.2 = TEM histórico, mas o preço "de" alegado não aparece nele — esse
-  //       sim é o sinal de preço inflado artificialmente.
-  // 0.5 = não há preço "de" alegado nenhum (produto sem desconto anunciado).
-  const pontoHistorico = promocaoVerificada
-    ? 1
-    : !temHistoricoAcumulado
-      ? 0.6
-      : entrada.precoAntigo != null
-        ? 0.2
-        : 0.5;
+  const pontoHistorico = calcularPontoHistorico(
+    promocaoVerificada,
+    temHistoricoAcumulado,
+    entrada.precoAntigo
+  );
   const pontoAvaliacao = calcularPontoAvaliacao(entrada.avaliacao);
   const pontoVendas = calcularPontoVendas(entrada.quantidadeVendida);
   const pontoLoja = calcularPontoLoja(entrada.lojaOficial, entrada.lojaConfiabilidade);
@@ -166,6 +157,24 @@ function calcularPontoDesconto(precoAtual: number, precoAntigo: number | null): 
   if (!precoAntigo || precoAntigo <= precoAtual) return 0;
   const percentual = (1 - precoAtual / precoAntigo) * 100;
   return Math.min(percentual / 70, 1); // 70%+ de desconto já pontua o máximo
+}
+
+// 1 = preço "de" bate com o histórico (promoção confirmada).
+// 0.6 = produto ainda sem histórico acumulado (catálogo novo/recém
+//       importado) — não é culpa do produto, não deve ser punido como
+//       se fosse suspeito, mas também não ganha o ponto máximo.
+// 0.2 = TEM histórico, mas o preço "de" alegado não aparece nele — esse
+//       sim é o sinal de preço inflado artificialmente.
+// 0.5 = não há preço "de" alegado nenhum (produto sem desconto anunciado).
+function calcularPontoHistorico(
+  promocaoVerificada: boolean,
+  temHistoricoAcumulado: boolean,
+  precoAntigo: number | null
+): number {
+  if (promocaoVerificada) return 1;
+  if (!temHistoricoAcumulado) return 0.6;
+  if (precoAntigo != null) return 0.2;
+  return 0.5;
 }
 
 function calcularPontoAvaliacao(avaliacao: number): number {

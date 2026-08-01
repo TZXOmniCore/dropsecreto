@@ -17,7 +17,13 @@ export const metadata = {
 export default async function TodosProdutosPage({
   searchParams,
 }: {
-  searchParams: { pagina?: string; ordenar?: string; desconto?: string; precoMin?: string; precoMax?: string };
+  readonly searchParams: {
+    readonly pagina?: string;
+    readonly ordenar?: string;
+    readonly desconto?: string;
+    readonly precoMin?: string;
+    readonly precoMax?: string;
+  };
 }) {
   const paginaAtual = Math.max(1, Number(searchParams.pagina) || 1);
   const filtros: FiltrosProdutos = {

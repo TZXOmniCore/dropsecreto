@@ -87,7 +87,7 @@ function mapearProduto(row: ProdutoRow): Produto {
       ? Math.max(
           0,
           Math.round(
-            (new Date(registros[registros.length - 1]!.registrado_em).getTime() -
+            (new Date(registros.at(-1)!.registrado_em).getTime() -
               new Date(registros[0]!.registrado_em).getTime()) /
               (1000 * 60 * 60 * 24)
           )

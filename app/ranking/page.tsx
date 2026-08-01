@@ -21,7 +21,7 @@ const ABAS = [
 export default async function RankingPage({
   searchParams,
 }: {
-  searchParams: { periodo?: string };
+  readonly searchParams: { readonly periodo?: string };
 }) {
   const periodo = searchParams.periodo === 'mes' ? 'mes' : 'dia';
   const ranking = await buscarRankingPorDesconto(periodo, 50);

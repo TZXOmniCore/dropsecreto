@@ -28,7 +28,7 @@ function useContagemRegressiva() {
   return [h, m, s].map((n) => String(n).padStart(2, '0')).join(':');
 }
 
-export function FlashDeals({ produtos }: { produtos: Produto[] }) {
+export function FlashDeals({ produtos }: { readonly produtos: Produto[] }) {
   const relogio = useContagemRegressiva();
 
   if (produtos.length === 0) return null;

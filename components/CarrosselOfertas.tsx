@@ -10,7 +10,7 @@ function formatarPreco(valor: number) {
   return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
 
-function Cartao({ produto }: { produto: Produto }) {
+function Cartao({ produto }: { readonly produto: Produto }) {
   const desconto = produto.precoAntigo
     ? Math.round(((produto.precoAntigo - produto.precoAtual) / produto.precoAntigo) * 100)
     : 0;
@@ -40,7 +40,7 @@ function Cartao({ produto }: { produto: Produto }) {
 // sempre vivo" na seção de últimas quedas de preço. Pausa no hover/toque
 // (a pessoa consegue clicar sem o carrossel fugir do dedo) e a lista é
 // duplicada uma vez pra o loop ficar contínuo, sem "pulo" perceptível.
-export function CarrosselOfertas({ produtos }: { produtos: Produto[] }) {
+export function CarrosselOfertas({ produtos }: { readonly produtos: Produto[] }) {
   const [pausado, setPausado] = useState(false);
   const dobrado = [...produtos, ...produtos];
   // Duração proporcional à quantidade de itens, pra velocidade ficar

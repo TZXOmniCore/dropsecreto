@@ -4,10 +4,10 @@ import { Share2 } from 'lucide-react';
 import { eventos } from '@/lib/analytics';
 
 interface Props {
-  produtoId?: string;
-  nomeProduto: string;
-  precoFormatado: string;
-  url: string;
+  readonly produtoId?: string;
+  readonly nomeProduto: string;
+  readonly precoFormatado: string;
+  readonly url: string;
 }
 
 // Usa a Web Share API nativa (funciona em quase todo navegador de
@@ -31,7 +31,8 @@ export function CompartilharBotao({ produtoId, nomeProduto, precoFormatado, url 
       }
     }
 
-    const linkWhatsApp = `https://wa.me/?text=${encodeURIComponent(`${texto} ${url}`)}`;
+    const mensagemCompleta = `${texto} ${url}`;
+    const linkWhatsApp = `https://wa.me/?text=${encodeURIComponent(mensagemCompleta)}`;
     window.open(linkWhatsApp, '_blank', 'noopener,noreferrer');
   }
 

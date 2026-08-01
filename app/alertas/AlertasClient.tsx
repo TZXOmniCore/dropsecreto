@@ -61,10 +61,11 @@ export function AlertasClient() {
 
         <form onSubmit={criarAlerta} className="glass mt-6 flex flex-col gap-4 rounded-2xl p-5">
           <div>
-            <label className="mb-1.5 block text-xs text-ink-secondary">
+            <label htmlFor="alerta-termo" className="mb-1.5 block text-xs text-ink-secondary">
               O que você está procurando
             </label>
             <input
+              id="alerta-termo"
               value={termo}
               onChange={(e) => setTermo(e.target.value)}
               placeholder="Ex: SSD 1TB, Mouse Gamer, RTX 4060"
@@ -73,12 +74,13 @@ export function AlertasClient() {
           </div>
 
           <div>
-            <label className="mb-1.5 block text-xs text-ink-secondary">
+            <label htmlFor="alerta-preco-alvo" className="mb-1.5 block text-xs text-ink-secondary">
               Avisar quando o preço cair até
             </label>
             <div className="flex items-center gap-2 rounded-lg border border-line bg-bg-raised/60 px-3 py-2.5 focus-within:border-accent">
               <span className="text-sm text-ink-faint">R$</span>
               <input
+                id="alerta-preco-alvo"
                 type="number"
                 min="0"
                 step="0.01"
@@ -112,6 +114,7 @@ export function AlertasClient() {
                   </div>
                 </div>
                 <button
+                  type="button"
                   onClick={() => excluir(a.id)}
                   aria-label="Excluir alerta"
                   className="text-ink-faint transition-colors hover:text-danger"

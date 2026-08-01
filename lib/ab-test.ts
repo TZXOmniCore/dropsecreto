@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { registrarEvento } from './analytics';
+import { randomFloat } from './random';
 
 // Hook genérico de teste A/B — pronto pra usar, mas sem nenhum
 // experimento específico rodando ainda (ninguém definiu o que testar).
@@ -25,11 +26,11 @@ export function useTesteAB<T extends string>(nomeExperimento: string, variantes:
       if (salva && variantes.includes(salva)) {
         escolhida = salva;
       } else {
-        escolhida = variantes[Math.floor(Math.random() * variantes.length)];
+        escolhida = variantes[Math.floor(randomFloat() * variantes.length)];
         window.localStorage.setItem(chave, escolhida);
       }
     } catch {
-      escolhida = variantes[Math.floor(Math.random() * variantes.length)];
+      escolhida = variantes[Math.floor(randomFloat() * variantes.length)];
     }
     setVariante(escolhida);
     registrarEvento('teste_ab_visto', { experimento: nomeExperimento, variante: escolhida });
