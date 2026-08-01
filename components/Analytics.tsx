@@ -1,4 +1,5 @@
 import Script from 'next/script';
+import { Analytics as VercelAnalytics } from '@vercel/analytics/next';
 
 // Só carrega cada ferramenta se a variável de ambiente correspondente
 // estiver configurada — o site funciona 100% normal sem nenhuma delas.
@@ -12,6 +13,10 @@ import Script from 'next/script';
 // item 2): criar conta grátis em clarity.microsoft.com, criar um
 // projeto, copiar o "Project ID" e colar em NEXT_PUBLIC_CLARITY_ID.
 // Clarity é 100% gratuito, sem limite de sessões nem plano pago.
+//
+// Pra ativar o Vercel Web Analytics: habilitar na dashboard do Vercel em
+// Analytics > Enable Web Analytics. O componente já está configurado aqui
+// e funcionará automaticamente quando habilitado no dashboard.
 export function Analytics() {
   const gaId = process.env.NEXT_PUBLIC_GA_ID;
   const clarityId = process.env.NEXT_PUBLIC_CLARITY_ID;
@@ -43,6 +48,8 @@ export function Analytics() {
           `}
         </Script>
       )}
+
+      <VercelAnalytics />
     </>
   );
 }
