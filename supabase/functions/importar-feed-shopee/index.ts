@@ -510,6 +510,12 @@ Deno.serve(async () => {
       console.error('Falha ao gravar log de erro em logs_importacao:', error_);
     }
 
-    return new Response(JSON.stringify({ ok: false, erro: String(error_) }), { status: 500 });
+    // Não devolve String(error_) no corpo da resposta: pode conter caminho
+    // de arquivo, stack trace ou outro detalhe interno do runtime. O erro
+    // completo já foi logado acima (console.error + logs_importacao) —
+    // aqui só confirma pro chamador que falhou, sem vazar detalhe interno.
+    return new Response(JSON.stringify({ ok: false, erro: 'Falha ao importar feed. Ver logs_importacao para detalhes.' }), {
+      status: 500,
+    });
   }
 });

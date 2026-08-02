@@ -9,9 +9,14 @@ import { buscarCategorias, buscarProdutosPorCategoria } from '@/lib/produtos';
 
 export const revalidate = 60;
 
-export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: {
+  readonly params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
   const categorias = await buscarCategorias();
-  const categoria = categorias.find((c) => c.slug === params.slug);
+  const categoria = categorias.find((c) => c.slug === slug);
   if (!categoria) return { title: 'Categoria não encontrada — Drop Secreto' };
 
   return {
@@ -21,9 +26,14 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   };
 }
 
-export default async function CategoriaPage({ params }: { readonly params: { slug: string } }) {
+export default async function CategoriaPage({
+  params,
+}: {
+  readonly params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
   const categorias = await buscarCategorias();
-  const categoria = categorias.find((c) => c.slug === params.slug);
+  const categoria = categorias.find((c) => c.slug === slug);
   if (!categoria) notFound();
 
   const produtos = await buscarProdutosPorCategoria(categoria.slug);

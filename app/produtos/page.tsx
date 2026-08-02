@@ -17,30 +17,31 @@ export const metadata = {
 export default async function TodosProdutosPage({
   searchParams,
 }: {
-  readonly searchParams: {
+  readonly searchParams: Promise<{
     readonly pagina?: string;
     readonly ordenar?: string;
     readonly desconto?: string;
     readonly precoMin?: string;
     readonly precoMax?: string;
-  };
+  }>;
 }) {
-  const paginaAtual = Math.max(1, Number(searchParams.pagina) || 1);
+  const sp = await searchParams;
+  const paginaAtual = Math.max(1, Number(sp.pagina) || 1);
   const filtros: FiltrosProdutos = {
     pagina: paginaAtual,
-    ordenar: (searchParams.ordenar as FiltrosProdutos['ordenar']) || 'relevancia',
-    descontoMinimo: Number(searchParams.desconto) || undefined,
-    precoMin: searchParams.precoMin ? Number(searchParams.precoMin) : undefined,
-    precoMax: searchParams.precoMax ? Number(searchParams.precoMax) : undefined,
+    ordenar: (sp.ordenar as FiltrosProdutos['ordenar']) || 'relevancia',
+    descontoMinimo: Number(sp.desconto) || undefined,
+    precoMin: sp.precoMin ? Number(sp.precoMin) : undefined,
+    precoMax: sp.precoMax ? Number(sp.precoMax) : undefined,
   };
   const { produtos, total, totalPaginas } = await buscarProdutosFiltrados(filtros);
 
   function comFiltros(pagina: number) {
     const params = new URLSearchParams();
-    if (searchParams.ordenar) params.set('ordenar', searchParams.ordenar);
-    if (searchParams.desconto) params.set('desconto', searchParams.desconto);
-    if (searchParams.precoMin) params.set('precoMin', searchParams.precoMin);
-    if (searchParams.precoMax) params.set('precoMax', searchParams.precoMax);
+    if (sp.ordenar) params.set('ordenar', sp.ordenar);
+    if (sp.desconto) params.set('desconto', sp.desconto);
+    if (sp.precoMin) params.set('precoMin', sp.precoMin);
+    if (sp.precoMax) params.set('precoMax', sp.precoMax);
     params.set('pagina', String(pagina));
     return `/produtos?${params.toString()}`;
   }

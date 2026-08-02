@@ -21,8 +21,13 @@ function formatarPreco(valor: number) {
   return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
 
-export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
-  const produto = await buscarProdutoPorId(params.id);
+export async function generateMetadata({
+  params,
+}: {
+  readonly params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const produto = await buscarProdutoPorId(id);
   if (!produto) {
     return { title: 'Produto não encontrado — Drop Secreto' };
   }
@@ -43,8 +48,13 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
   };
 }
 
-export default async function ProdutoPage({ params }: { readonly params: { id: string } }) {
-  const produto = await buscarProdutoPorId(params.id);
+export default async function ProdutoPage({
+  params,
+}: {
+  readonly params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  const produto = await buscarProdutoPorId(id);
 
   if (!produto) {
     const sugestoes = await buscarTopOfertas(8);

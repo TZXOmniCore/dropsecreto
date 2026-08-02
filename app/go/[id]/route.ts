@@ -24,8 +24,8 @@ export const dynamic = 'force-dynamic';
 // por tentativa de abuso via URL manipulada.
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
-  const { id } = params;
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const origin = request.nextUrl.origin;
 
   if (!id || !UUID_REGEX.test(id)) {

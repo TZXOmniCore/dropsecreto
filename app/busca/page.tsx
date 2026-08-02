@@ -16,20 +16,21 @@ export const metadata = {
 export default async function BuscaPage({
   searchParams,
 }: {
-  readonly searchParams: {
+  readonly searchParams: Promise<{
     readonly q?: string;
     readonly ordenar?: string;
     readonly desconto?: string;
     readonly precoMin?: string;
     readonly precoMax?: string;
-  };
+  }>;
 }) {
-  const termo = searchParams.q?.trim() ?? '';
+  const params = await searchParams;
+  const termo = params.q?.trim() ?? '';
   const filtros: FiltrosProdutos = {
-    ordenar: (searchParams.ordenar as FiltrosProdutos['ordenar']) || 'relevancia',
-    descontoMinimo: Number(searchParams.desconto) || undefined,
-    precoMin: searchParams.precoMin ? Number(searchParams.precoMin) : undefined,
-    precoMax: searchParams.precoMax ? Number(searchParams.precoMax) : undefined,
+    ordenar: (params.ordenar as FiltrosProdutos['ordenar']) || 'relevancia',
+    descontoMinimo: Number(params.desconto) || undefined,
+    precoMin: params.precoMin ? Number(params.precoMin) : undefined,
+    precoMax: params.precoMax ? Number(params.precoMax) : undefined,
   };
   const produtos = termo ? await buscarProdutosPorNome(termo, filtros) : [];
 

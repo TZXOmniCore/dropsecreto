@@ -21,9 +21,10 @@ const ABAS = [
 export default async function RankingPage({
   searchParams,
 }: {
-  readonly searchParams: { readonly periodo?: string };
+  readonly searchParams: Promise<{ readonly periodo?: string }>;
 }) {
-  const periodo = searchParams.periodo === 'mes' ? 'mes' : 'dia';
+  const sp = await searchParams;
+  const periodo = sp.periodo === 'mes' ? 'mes' : 'dia';
   const ranking = await buscarRankingPorDesconto(periodo, 50);
   const tituloAtual = ABAS.find((a) => a.periodo === periodo)!.rotulo;
 
