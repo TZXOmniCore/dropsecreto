@@ -10,7 +10,7 @@ interface Props {
   readonly url: string;
 }
 
-// Usa a Web Share API nativa (funciona em quase todo navegador de
+// Usa a Web Share API nativa (funciona em quase todo navegador de NOSONAR
 // celular e já abre o menu com WhatsApp/Telegram/etc. junto). Sem
 // suporte (a maioria dos navegadores de desktop), cai direto num link
 // do WhatsApp com a mensagem pronta — sem precisar de nenhuma

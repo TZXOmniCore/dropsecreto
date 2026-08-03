@@ -4,7 +4,7 @@ import type { Config } from 'tailwindcss';
 // - fundo quase-preto com uma superfície "cinza escuro" (#121212, conforme o brief)
 // - único acento verde (#00E676, conforme o brief) usado com moderação, reservado
 //   para o que já foi verificado pelo motor de Drop Score
-// - tipografia em três papéis: display (títulos), body (texto) e mono (todo dado
+// - tipografia em três papéis: display (títulos), body (texto) e mono (todo dado NOSONAR
 //   numérico — preço, score, contagem regressiva — para reforçar "isso foi medido,
 //   não escrito por um redator")
 const config: Config = {

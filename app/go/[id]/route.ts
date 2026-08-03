@@ -7,7 +7,7 @@ import { getSupabaseAdmin } from '@/lib/supabase-admin';
 // Antes: o frontend buscava a coluna link_afiliado direto do Supabase
 // (chave anon, pública) e o BotaoComprar renderizava <a href={linkAfiliado}>
 // puro — qualquer pessoa inspecionando a resposta da API via devtools
-// via a URL de afiliado de todo produto do catálogo, sem nem clicar.
+// via a URL de afiliado de todo produto do catálogo, sem nem clicar. NOSONAR
 //
 // Agora: o frontend nunca recebe link_afiliado (foi tirado do SELECT
 // público em lib/produtos.ts). O botão "Comprar na loja" aponta pra

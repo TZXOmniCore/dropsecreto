@@ -97,7 +97,7 @@ async function buscarOfertaPorItem(shopId: number, itemId: number): Promise<any>
   // shopId/itemId como STRING no JSON, não number — campos Int64 costumam
   // exigir o valor como texto pra não perder precisão de 64 bits sendo
   // transportado como número JSON puro. Foi a causa confirmada do erro
-  // "wrong type" (code 10010) que estava batendo em quase todo item.
+  // "wrong type" (code 10010) que estava batendo em quase todo item. NOSONAR
   const dados = await chamarGraphQL(query, { shopId: String(shopId), itemId: String(itemId) });
   return dados?.productOfferV2?.nodes?.[0] ?? null;
 }

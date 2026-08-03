@@ -10,7 +10,7 @@ import './globals.css';
 // Três papéis tipográficos deliberados:
 // - display: título com personalidade, usado com moderação
 // - body: texto corrido, legível em telas escuras
-// - mono: todo número (preço, score, contagem regressiva) — sinaliza "isso foi
+// - mono: todo número (preço, score, contagem regressiva) — sinaliza "isso foi NOSONAR
 //   calculado", reforçando a proposta do produto de que os dados são verificados
 const display = Bricolage_Grotesque({
   subsets: ['latin'],
@@ -35,7 +35,7 @@ const DESCRICAO_PADRAO =
   'Todo produto aqui passou por uma análise automática de preço, avaliação, vendas e histórico. O resto, a gente descarta.';
 
 export const metadata: Metadata = {
-  // Faz todo link relativo em openGraph.images / alternates.canonical
+  // Faz todo link relativo em openGraph.images / alternates.canonical NOSONAR
   // (aqui e nas páginas filhas) virar URL absoluta automaticamente.
   metadataBase: new URL(SITE_URL),
   title: TITULO_PADRAO,

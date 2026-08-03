@@ -22,7 +22,7 @@ const DIAS_MINIMO_PRA_BADGE = 3; // histórico curto demais não sustenta a afir
 
 // Retorna o texto do badge ("menor preço em 47 dias") só quando o preço
 // atual é de fato o mais baixo do histórico acumulado E esse histórico já
-// cobre um período com significado (evita a badge aparecer em todo
+// cobre um período com significado (evita a badge aparecer em todo NOSONAR
 // produto novo, que teria "menor preço" só por só ter 1 registro).
 export function textoMenorPreco(
   produto: Pick<Produto, 'precoAtual' | 'historico90d' | 'historicoDiasCobertos'>
