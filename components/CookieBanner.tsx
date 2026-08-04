@@ -33,10 +33,10 @@ export function CookieBanner() {
       <div className="flex items-start gap-3">
         <Cookie className="mt-0.5 h-5 w-5 shrink-0 text-accent" aria-hidden />
         <p className="text-sm text-ink-secondary">
-          Usamos cookies opcionais de análise de audiência (Google Analytics e Microsoft
-          Clarity) só pra entender como o site é usado. Eles só são ativados se você
-          aceitar — o site funciona normalmente se você recusar. Veja detalhes na{' '}
-          <a href="/privacidade#cookies" className="text-accent underline underline-offset-2">
+          Usamos cookies opcionais de programas de analytics só pra entender como o site é
+          usado. Eles só são ativados se você aceitar — o site funciona normalmente se você
+          recusar. Veja detalhes na{' '}
+          <a href="/privacidade" className="text-accent underline underline-offset-2">
             política de privacidade
           </a>
           .

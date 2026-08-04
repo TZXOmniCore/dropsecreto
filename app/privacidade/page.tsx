@@ -69,27 +69,13 @@ export default function PrivacidadePage() {
               pode apagar a qualquer momento limpando os dados do site no navegador.
             </p>
             <p className="mt-2">
-              Além disso, usamos ferramentas de análise de audiência (que mostram quantas
+              Além disso, usamos programas de análise de audiência (que mostram quantas
               pessoas visitam o site e quais páginas são mais acessadas) e de monitoramento
               de erros técnicos, que recebem dados de uso de forma agregada — sem nome, e-mail
-              ou qualquer dado que identifique você diretamente. Veja abaixo quais dessas
-              ferramentas usam cookie e como você controla isso.
-            </p>
-          </section>
-
-          <section id="cookies">
-            <h2 className="font-display text-base font-semibold text-ink-primary">Cookies</h2>
-            <p className="mt-2">
-              Usamos duas ferramentas de análise de audiência que usam cookie:{' '}
-              <span className="text-ink-primary">Google Analytics</span> e{' '}
-              <span className="text-ink-primary">Microsoft Clarity</span> (mapa de calor e
-              gravação de sessão). Nenhuma das duas é carregada até você aceitar no aviso que
-              aparece na primeira visita — se você recusar, o site funciona normalmente do
-              mesmo jeito, só sem elas.
-            </p>
-            <p className="mt-2">
-              Você pode mudar sua escolha a qualquer momento clicando em
-              &quot;Cookies&quot; no rodapé do site, o que reabre o aviso de consentimento.
+              ou qualquer dado que identifique você diretamente. Os cookies opcionais desses
+              programas só são ativados se você aceitar no aviso que aparece ao entrar no
+              site; você pode mudar essa escolha a qualquer momento clicando em
+              &quot;Cookies&quot; no rodapé.
             </p>
           </section>
 
@@ -160,21 +146,7 @@ export default function PrivacidadePage() {
             </h2>
             <p className="mt-2">
               O tratamento de dados neste site segue a Lei Geral de Proteção de Dados (Lei nº
-              13.709/2018 — LGPD). Mesmo os poucos dados descritos acima, você tem o direito
-              de:
-            </p>
-            <ul className="mt-2 list-disc pl-5">
-              <li>confirmar se tratamos algum dado seu, e acessá-lo;</li>
-              <li>corrigir dado incompleto, inexato ou desatualizado;</li>
-              <li>pedir a exclusão de dado salvo localmente no seu aparelho;</li>
-              <li>revogar, a qualquer momento, o consentimento dado pra cookies opcionais;</li>
-              <li>
-                apresentar reclamação à Autoridade Nacional de Proteção de Dados (ANPD), caso
-                entenda que algum desses direitos não foi respeitado.
-              </li>
-            </ul>
-            <p className="mt-2">
-              Pra exercer qualquer um desses direitos, use o canal de contato descrito abaixo.
+              13.709/2018 — LGPD).
             </p>
           </section>
 
