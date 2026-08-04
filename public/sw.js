@@ -11,16 +11,26 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // Passthrough puro: sempre busca da rede, sem nenhum fallback.
+  const url = new URL(event.request.url);
+
+  // CORREÇÃO: só intercepta pedidos pro próprio domínio do site. Pedidos
+  // pra outros domínios (Google Analytics, Microsoft Clarity, Sentry etc.)
+  // passam direto pelo navegador, sem passar pelo service worker.
   //
-  // CORREÇÃO: antes tinha um .catch(() => caches.match(event.request))
-  // aqui. Como esse service worker nunca guarda nada em cache (é de
-  // propósito, ver comentário acima), esse "plano B" sempre devolvia
-  // undefined em vez de uma resposta de verdade — e isso quebrava a
-  // navegação inteira (ex.: clicar em "Comprar na loja", ou entrar em
-  // qualquer página de produto), fazendo o navegador simplesmente
-  // desistir e voltar pra página anterior. Sem esse fallback quebrado,
-  // se a rede falhar de verdade o navegador mostra o próprio aviso
-  // padrão de "sem conexão" — bem melhor do que travar a navegação.
+  // Motivo: quando o service worker "recaptura" um pedido de terceiro e
+  // refaz ele via fetch() de dentro de si mesmo, o navegador passa a
+  // avaliar isso pela regra connect-src da Content-Security-Policy, em vez
+  // da regra script-src (que é a que normalmente vale pra um <script src>
+  // comum). Isso bloqueava os scripts de analytics mesmo já estando
+  // liberados no script-src — e como cada ferramenta usa vários
+  // subdomínios variáveis (ex.: scripts.clarity.ms, c.clarity.ms), virava
+  // um jogo de gato e rato tentando liberar um por um. Não interceptando
+  // terceiros, esse problema simplesmente não existe mais.
+  if (url.origin !== self.location.origin) {
+    return;
+  }
+
+  // Passthrough puro pro que é do próprio site: sempre busca da rede, sem
+  // nenhum fallback de cache (não guardamos nada em cache, de propósito).
   event.respondWith(fetch(event.request));
 });

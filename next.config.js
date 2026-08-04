@@ -47,7 +47,7 @@ const nextConfig = {
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: https:",
               "font-src 'self' data:",
-              "connect-src 'self' https://*.supabase.co https://www.google-analytics.com https://www.clarity.ms https://*.clarity.ms https://c.bing.com https://*.ingest.sentry.io https://*.ingest.us.sentry.io",
+              "connect-src 'self' https://*.supabase.co https://www.google-analytics.com https://*.google-analytics.com https://www.googletagmanager.com https://www.clarity.ms https://*.clarity.ms https://c.bing.com https://*.ingest.sentry.io https://*.ingest.us.sentry.io",
               "frame-ancestors 'self'",
             ].join('; '),
           },
