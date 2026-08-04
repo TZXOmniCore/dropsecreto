@@ -33,6 +33,34 @@ export const dynamic = 'force-dynamic';
 // por tentativa de abuso via URL manipulada.
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+// ------------------------------------------------------------------
+// Rate limit simples, em memória, por IP — sem depender de nenhum
+// serviço externo (Redis/Upstash) nem custar nada. Limite generoso o
+// bastante pra nunca incomodar uma pessoa real clicando em produtos,
+// mas que já barra script batendo essa rota em loop.
+//
+// Limitação conhecida: numa função serverless, cada instância "fria"
+// tem seu próprio contador (não é compartilhado entre instâncias). Não
+// é uma defesa perfeita contra um ataque distribuído sério, mas cobre
+// o cenário mais comum (um bot simples batendo repetido do mesmo IP) e
+// pode ser trocado por um rate limit compartilhado (ex.: Upstash
+// Redis) mais pra frente, se o tráfego justificar o custo extra.
+// ------------------------------------------------------------------
+const JANELA_MS = 60_000;
+const LIMITE_POR_JANELA = 30;
+const contadorPorIp = new Map<string, { contagem: number; resetaEm: number }>();
+
+function excedeuLimite(ip: string): boolean {
+  const agora = Date.now();
+  const atual = contadorPorIp.get(ip);
+  if (!atual || agora > atual.resetaEm) {
+    contadorPorIp.set(ip, { contagem: 1, resetaEm: agora + JANELA_MS });
+    return false;
+  }
+  atual.contagem += 1;
+  return atual.contagem > LIMITE_POR_JANELA;
+}
+
 // Garante que o link do afiliado é uma URL absoluta válida e sem
 // caracteres que quebram um header HTTP (quebra de linha, tab, espaço
 // cru, acentos não codificados). Se não der pra confiar no link, retorna
@@ -57,6 +85,11 @@ function sanitizarLinkAfiliado(bruto: string): string | null {
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const origin = request.nextUrl.origin;
+
+  const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'desconhecido';
+  if (excedeuLimite(ip)) {
+    return new NextResponse('Muitas requisições. Tente novamente em instantes.', { status: 429 });
+  }
 
   if (!id || !UUID_REGEX.test(id)) {
     return NextResponse.redirect(`${origin}/`, { status: 302 });

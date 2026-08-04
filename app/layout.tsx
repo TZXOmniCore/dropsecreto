@@ -1,8 +1,8 @@
 import type { Metadata, Viewport } from 'next';
 import { Bricolage_Grotesque, IBM_Plex_Sans, IBM_Plex_Mono } from 'next/font/google';
-import { Analytics as VercelAnalytics } from '@vercel/analytics/next';
 import { PwaRegister } from '@/components/PwaRegister';
 import { Analytics } from '@/components/Analytics';
+import { CookieBanner } from '@/components/CookieBanner';
 import { VoltarAoTopo } from '@/components/VoltarAoTopo';
 import { BoasVindasToast } from '@/components/BoasVindasToast';
 import { SITE_URL } from '@/lib/site';
@@ -91,7 +91,7 @@ export default function RootLayout({ children }: { readonly children: React.Reac
         {children}
         <PwaRegister />
         <Analytics />
-        <VercelAnalytics />
+        <CookieBanner />
         <VoltarAoTopo />
         <BoasVindasToast />
       </body>

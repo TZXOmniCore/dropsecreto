@@ -1,4 +1,5 @@
 import { BotaoFeedback } from './BotaoFeedback';
+import { BotaoCookies } from './BotaoCookies';
 
 export function Footer() {
   const anoAtual = new Date().getFullYear();
@@ -24,6 +25,7 @@ export function Footer() {
           <a href="/privacidade" className="transition-colors hover:text-ink-primary">
             Privacidade e termos
           </a>
+          <BotaoCookies />
           <BotaoFeedback />
         </div>
 

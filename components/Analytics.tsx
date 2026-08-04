@@ -1,4 +1,8 @@
+'use client';
+
+import { useEffect, useState } from 'react';
 import Script from 'next/script';
+import { lerConsentimento, aoMudarConsentimento } from '@/lib/cookie-consent';
 
 // Só carrega cada ferramenta se a variável de ambiente correspondente
 // estiver configurada — o site funciona 100% normal sem nenhuma delas.
@@ -12,9 +16,22 @@ import Script from 'next/script';
 // item 2): criar conta grátis em clarity.microsoft.com, criar um
 // projeto, copiar o "Project ID" e colar em NEXT_PUBLIC_CLARITY_ID.
 // Clarity é 100% gratuito, sem limite de sessões nem plano pago.
+//
+// IMPORTANTE (LGPD): GA e Clarity usam cookie e são ferramentas não
+// essenciais — por isso só carregam depois que a pessoa aceita no
+// CookieBanner (ver lib/cookie-consent.ts). Sem aceite, nenhum dos dois
+// script chega a ser inserido na página.
 export function Analytics() {
   const gaId = process.env.NEXT_PUBLIC_GA_ID;
   const clarityId = process.env.NEXT_PUBLIC_CLARITY_ID;
+  const [consentiu, setConsentiu] = useState(false);
+
+  useEffect(() => {
+    setConsentiu(lerConsentimento() === 'aceito');
+    return aoMudarConsentimento((valor) => setConsentiu(valor === 'aceito'));
+  }, []);
+
+  if (!consentiu) return null;
 
   return (
     <>

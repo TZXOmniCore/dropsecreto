@@ -18,7 +18,7 @@ export default function PrivacidadePage() {
         <h1 className="font-display text-2xl font-bold text-ink-primary">
           Privacidade e termos de uso
         </h1>
-        <p className="mt-2 text-xs text-ink-faint">Última atualização: julho de 2026.</p>
+        <p className="mt-2 text-xs text-ink-faint">Última atualização: agosto de 2026.</p>
 
         <div className="mt-8 flex flex-col gap-6">
           <section>
@@ -72,7 +72,24 @@ export default function PrivacidadePage() {
               Além disso, usamos ferramentas de análise de audiência (que mostram quantas
               pessoas visitam o site e quais páginas são mais acessadas) e de monitoramento
               de erros técnicos, que recebem dados de uso de forma agregada — sem nome, e-mail
-              ou qualquer dado que identifique você diretamente.
+              ou qualquer dado que identifique você diretamente. Veja abaixo quais dessas
+              ferramentas usam cookie e como você controla isso.
+            </p>
+          </section>
+
+          <section id="cookies">
+            <h2 className="font-display text-base font-semibold text-ink-primary">Cookies</h2>
+            <p className="mt-2">
+              Usamos duas ferramentas de análise de audiência que usam cookie:{' '}
+              <span className="text-ink-primary">Google Analytics</span> e{' '}
+              <span className="text-ink-primary">Microsoft Clarity</span> (mapa de calor e
+              gravação de sessão). Nenhuma das duas é carregada até você aceitar no aviso que
+              aparece na primeira visita — se você recusar, o site funciona normalmente do
+              mesmo jeito, só sem elas.
+            </p>
+            <p className="mt-2">
+              Você pode mudar sua escolha a qualquer momento clicando em
+              &quot;Cookies&quot; no rodapé do site, o que reabre o aviso de consentimento.
             </p>
           </section>
 
@@ -134,6 +151,30 @@ export default function PrivacidadePage() {
             <p className="mt-2">
               Eventuais disputas relacionadas ao uso deste site serão resolvidas conforme a
               legislação brasileira.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="font-display text-base font-semibold text-ink-primary">
+              Seus direitos (LGPD)
+            </h2>
+            <p className="mt-2">
+              O tratamento de dados neste site segue a Lei Geral de Proteção de Dados (Lei nº
+              13.709/2018 — LGPD). Mesmo os poucos dados descritos acima, você tem o direito
+              de:
+            </p>
+            <ul className="mt-2 list-disc pl-5">
+              <li>confirmar se tratamos algum dado seu, e acessá-lo;</li>
+              <li>corrigir dado incompleto, inexato ou desatualizado;</li>
+              <li>pedir a exclusão de dado salvo localmente no seu aparelho;</li>
+              <li>revogar, a qualquer momento, o consentimento dado pra cookies opcionais;</li>
+              <li>
+                apresentar reclamação à Autoridade Nacional de Proteção de Dados (ANPD), caso
+                entenda que algum desses direitos não foi respeitado.
+              </li>
+            </ul>
+            <p className="mt-2">
+              Pra exercer qualquer um desses direitos, use o canal de contato descrito abaixo.
             </p>
           </section>
 
