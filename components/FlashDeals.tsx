@@ -40,7 +40,15 @@ export function FlashDeals({ produtos }: { readonly produtos: Produto[] }) {
           <h2 className="font-display text-xl font-bold text-ink-primary">Flash Deals</h2>
           <p className="text-sm text-ink-secondary">Score alto, tempo curto. Some da lista quando o relógio zera.</p>
         </div>
-        <div className="mono-num rounded-full border border-accent/30 bg-bg-base/60 px-4 py-2 text-lg text-accent">
+        {/* suppressHydrationWarning: esse relógio muda a cada segundo, então
+            o valor calculado no servidor nunca vai bater 100% com o do
+            navegador (diferença de milissegundos entre um e outro é normal
+            e não é bug real) — sem isso o React tratava a diferença
+            esperada como erro (#418) e refazia o card do zero à toa. */}
+        <div
+          className="mono-num rounded-full border border-accent/30 bg-bg-base/60 px-4 py-2 text-lg text-accent"
+          suppressHydrationWarning
+        >
           {relogio}
         </div>
       </div>

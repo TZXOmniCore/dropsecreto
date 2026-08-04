@@ -150,7 +150,7 @@ export function ProductCard({
             </div>
 
             {badges}
-            <p className="text-[11px] text-ink-faint">verificado {tempoRelativo(produto.atualizadoEm)}</p>
+            <p className="text-[11px] text-ink-faint" suppressHydrationWarning>verificado {tempoRelativo(produto.atualizadoEm)}</p>
           </div>
         </div>
       </Link>
@@ -209,7 +209,7 @@ export function ProductCard({
 
           {badges}
 
-          <p className="text-[11px] text-ink-faint">verificado {tempoRelativo(produto.atualizadoEm)}</p>
+          <p className="text-[11px] text-ink-faint" suppressHydrationWarning>verificado {tempoRelativo(produto.atualizadoEm)}</p>
         </div>
       </div>
     </Link>
