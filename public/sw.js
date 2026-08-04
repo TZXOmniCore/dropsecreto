@@ -11,7 +11,16 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // Passthrough: sempre busca da rede. Sem isso, alguns navegadores não
-  // consideram o site "instalável".
-  event.respondWith(fetch(event.request).catch(() => caches.match(event.request)));
+  // Passthrough puro: sempre busca da rede, sem nenhum fallback.
+  //
+  // CORREÇÃO: antes tinha um .catch(() => caches.match(event.request))
+  // aqui. Como esse service worker nunca guarda nada em cache (é de
+  // propósito, ver comentário acima), esse "plano B" sempre devolvia
+  // undefined em vez de uma resposta de verdade — e isso quebrava a
+  // navegação inteira (ex.: clicar em "Comprar na loja", ou entrar em
+  // qualquer página de produto), fazendo o navegador simplesmente
+  // desistir e voltar pra página anterior. Sem esse fallback quebrado,
+  // se a rede falhar de verdade o navegador mostra o próprio aviso
+  // padrão de "sem conexão" — bem melhor do que travar a navegação.
+  event.respondWith(fetch(event.request));
 });
