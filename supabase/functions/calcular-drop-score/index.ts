@@ -21,11 +21,9 @@
 //
 // ⚠️ Essa cópia foi revisada e alinhada de propósito com a de
 // supabase/functions/_shared/drop-score-engine.ts (usada pelo frontend em
-// HowItWorks.tsx) nesta atualização — os dois arquivos estavam com
-// limiares diferentes (3,5 aqui, 4,0 lá) e foram unificados. Se um dia
-// mudar peso/limiar, muda nos DOIS lugares — ou migra o deploy pra CLI
-// (`supabase functions deploy`), que bundla o _shared automático e aí
-// volta a ter uma fonte única de verdade.
+// HowItWorks.tsx). Se um dia mudar peso/limiar, muda nos DOIS lugares —
+// ou migra o deploy pra CLI (`supabase functions deploy`), que bundla o
+// _shared automático e aí volta a ter uma fonte única de verdade.
 //
 // CORREÇÃO 3 (frete/cupom são dado morto): a Shopee Affiliate API
 // (productOfferV2) não devolve frete nem cupom — esses dois campos nunca
@@ -39,8 +37,12 @@
 // sempre 0), então o corte antigo (`quantidadeAvaliacoes === 0`) SEMPRE
 // caía no ramo "produto sem avaliação" — a nota própria do produto
 // (`avaliacao`, que a Shopee de fato manda) nunca era checada contra o
-// limiar de 3,5. Trocado pra usar `avaliacao <= 0` como sinal de "ainda
-// sem nota", que é o dado que a API realmente entrega.
+// limiar. Trocado pra usar `avaliacao <= 0` como sinal de "ainda sem
+// nota", que é o dado que a API realmente entrega.
+//
+// CORREÇÃO 5 (limiar de nota): os três limiares abaixo foram unificados
+// em 4,0 — decisão de negócio. Antes era um mix de 3,5 (loja/produto) e
+// 4,0 (loja quando o produto ainda não tem nota própria).
 // ============================================================
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
@@ -65,8 +67,9 @@ const PESOS = {
   cupom: 0,
 } as const;
 
-const LIMIAR_NOTA_LOJA = 3.5;
-const LIMIAR_NOTA_PRODUTO = 3.5;
+// Os três unificados em 4,0 — ver CORREÇÃO 5 no topo do arquivo.
+const LIMIAR_NOTA_LOJA = 4.0;
+const LIMIAR_NOTA_PRODUTO = 4.0;
 const LIMIAR_NOTA_LOJA_PRODUTO_SEM_AVALIACAO = 4.0;
 
 interface HistoricoPrecoPonto {
@@ -132,11 +135,13 @@ function calcularDropScore(entrada: EntradaDropScore): ResultadoDropScore {
 
   const pontoDesconto = calcularPontoDesconto(entrada.precoAtual, entrada.precoAntigo);
   // Ver CORREÇÃO no motor _shared pra explicação completa dos 4 casos.
-  const pontoHistorico = calcularPontoHistorico(
-    promocaoVerificada,
-    temHistoricoAcumulado,
-    entrada.precoAntigo
-  );
+  const pontoHistorico = promocaoVerificada
+    ? 1
+    : !temHistoricoAcumulado
+      ? 0.6
+      : entrada.precoAntigo != null
+        ? 0.2
+        : 0.5;
   const pontoAvaliacao = calcularPontoAvaliacao(entrada.avaliacao);
   const pontoVendas = calcularPontoVendas(entrada.quantidadeVendida);
   const pontoLoja = calcularPontoLoja(entrada.lojaOficial, entrada.lojaConfiabilidade);
@@ -178,18 +183,6 @@ function calcularPontoDesconto(precoAtual: number, precoAntigo: number | null): 
   if (!precoAntigo || precoAntigo <= precoAtual) return 0;
   const percentual = (1 - precoAtual / precoAntigo) * 100;
   return Math.min(percentual / 70, 1);
-}
-
-// Ver _shared/drop-score-engine.ts pra explicação completa dos 4 casos.
-function calcularPontoHistorico(
-  promocaoVerificada: boolean,
-  temHistoricoAcumulado: boolean,
-  precoAntigo: number | null
-): number {
-  if (promocaoVerificada) return 1;
-  if (!temHistoricoAcumulado) return 0.6;
-  if (precoAntigo != null) return 0.2;
-  return 0.5;
 }
 
 function calcularPontoAvaliacao(avaliacao: number): number {

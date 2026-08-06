@@ -5,23 +5,24 @@
 // inventados, e chegou a ficar dessincronizado da cópia que roda de
 // verdade em produção (calcular-drop-score/index.ts — que não consegue
 // importar daqui porque o deploy é feito pela Dashboard do Supabase, não
-// pela CLI). Nesta atualização os dois arquivos foram revisados e
-// alinhados de propósito. Se mudar peso ou limiar, muda NOS DOIS
-// LUGARES — ou migre o deploy pra CLI (`supabase functions deploy`) pra
-// voltar a ter uma fonte única de verdade.
+// pela CLI). Se mudar peso ou limiar, muda NOS DOIS LUGARES — ou migre o
+// deploy pra CLI (`supabase functions deploy`) pra voltar a ter uma fonte
+// única de verdade.
 //
-// Mudanças feitas nesta revisão:
-// 1) Limiares unificados em 3,5 (produto e loja) / 4,0 (loja quando o
-//    produto ainda não tem avaliação própria) — antes um arquivo dizia
-//    4,0/4,0/4,5 e o outro 3,5/3,5/4,0.
-// 2) `frete` e `cupom` zerados: a Shopee Affiliate API (productOfferV2)
+// CORREÇÃO (limiar de nota): os três limiares abaixo foram unificados em
+// 4,0 — decisão de negócio, não bug técnico. Antes existia um mix de
+// 3,5 (loja/produto) e 4,0 (loja quando o produto ainda não tem nota
+// própria); agora os três usam o mesmo corte de 4,0.
+//
+// Mudanças de revisões anteriores, mantidas:
+// 1) `frete` e `cupom` zerados: a Shopee Affiliate API (productOfferV2)
 //    não devolve frete nem cupom, então esses dois pesos (15% do total)
 //    sempre caíam num valor fixo/neutro — nunca discriminavam nada de
 //    verdade. O peso foi redistribuído pros critérios que têm dado real
 //    (desconto, histórico, avaliação, vendas, loja). Se um dia a API
 //    passar a expor frete/cupom de verdade, é só voltar a dar peso a eles.
-// 3) Produto sem histórico de preço ACUMULADO AINDA (catálogo novo, recém
-//    populado) não é mais tratado como quase-suspeito — só o caso em que
+// 2) Produto sem histórico de preço ACUMULADO AINDA (catálogo novo, recém
+//    populado) não é tratado como quase-suspeito — só o caso em que
 //    existe histórico mas o preço "de" alegado não bate com ele continua
 //    sendo penalizado (esse sim é sinal de preço inflado artificialmente).
 // ============================================================
@@ -39,8 +40,9 @@ export const PESOS = {
   cupom: 0,
 } as const;
 
-export const LIMIAR_NOTA_LOJA = 3.5;
-export const LIMIAR_NOTA_PRODUTO = 3.5;
+// Os três unificados em 4,0 — ver CORREÇÃO no topo do arquivo.
+export const LIMIAR_NOTA_LOJA = 4.0;
+export const LIMIAR_NOTA_PRODUTO = 4.0;
 export const LIMIAR_NOTA_LOJA_PRODUTO_SEM_AVALIACAO = 4.0;
 
 export interface HistoricoPrecoPonto {

@@ -6,41 +6,49 @@
 // disparada por cron a cada poucos minutos — ver instruções de deploy
 // no fim deste arquivo.
 //
-// CORREÇÕES NESTA VERSÃO — resolve o "CPU Time exceeded":
+// CORREÇÕES DE VERSÕES ANTERIORES (resolviam o "CPU Time exceeded"):
 //
 // 1) O limite que estava estourando NÃO é o de tempo de parede (150s de
 //    idle timeout / 400s de duração máxima) — é o de CPU TIME, que no
 //    Supabase é de só 2000ms de processamento ATIVO por invocação (não
 //    conta espera de rede/banco — só conta o que o processador
-//    efetivamente executa: parsing, HMAC, laços, etc). A versão anterior
-//    tentava processar várias páginas dentro de um orçamento de 100s de
-//    parede — isso cabia tranquilo no teto de tempo de parede, mas a soma
-//    do trabalho síncrono de várias páginas seguidas estourava os 2s de
-//    CPU, e a função era encerrada à força pelo runtime — por isso nem o
-//    catch disparava, e o estado da página nunca chegava a ser salvo.
-//    AGORA a função processa 1 página só por invocação — pouco trabalho
-//    síncrono, bem abaixo do teto — e quem garante o ritmo de importação
-//    é a frequência do cron, não um laço interno.
+//    efetivamente executa: parsing, HMAC, laços, etc). A função processa
+//    1 página só por invocação — pouco trabalho síncrono, bem abaixo do
+//    teto — e quem garante o ritmo de importação é a frequência do cron,
+//    não um laço interno.
 //
-// 2) TABELA import_estado: o código já dependia dela pra saber em que
-//    página continuar, mas o SQL de criação nunca tinha entrado no
-//    projeto — a tabela provavelmente nunca existiu de verdade, então a
-//    importação sempre recomeçava da página 1 e nunca avançava pelo
-//    catálogo de verdade. Ver migration 0002_import_estado_e_categoria.sql.
+// 2) TABELA import_estado (migration 0002): guarda em que página
+//    continuar — sem ela a importação sempre recomeçava da página 1.
 //
-// 3) NOTA DA LOJA: buscar shopOfferV2 (que exige outra assinatura HMAC)
-//    pra TODA loja em TODA execução também pesava no orçamento de CPU.
-//    Agora só busca de novo se a loja não tiver sido atualizada nas
-//    últimas 24h — a nota de uma loja não muda minuto a minuto.
+// 3) NOTA DA LOJA: só busca de novo se a loja não tiver sido atualizada
+//    nas últimas 24h — a nota de uma loja não muda minuto a minuto.
 //
-// 4) CATEGORIA: a Shopee não documenta os productCatIds da conta — não dá
-//    pra "adivinhar" os números certos sem inventar informação. Em vez de
-//    depender deles, a categoria agora é decidida por palavra-chave no
-//    NOME do produto (dado real que a própria Shopee manda). Produto que
-//    não bate com nenhuma palavra-chave conhecida cai em "outros" — nunca
-//    fica sem categoria. Ver PALAVRAS_CHAVE_CATEGORIA mais abaixo; é uma
-//    lista inicial, vale revisar/ampliar conforme os produtos reais forem
-//    aparecendo nos logs.
+// 4) CATEGORIA: decidida por palavra-chave no NOME do produto — ver
+//    PALAVRAS_CHAVE_CATEGORIA mais abaixo (fonte de verdade espelhada em
+//    _shared/categoria-classifier.ts).
+//
+// CORREÇÃO 5 (a causa real de só ~1200 produtos importados em 10 dias):
+// a Shopee Affiliate API tem um teto real de PROFUNDIDADE de paginação —
+// depois de um certo número de páginas ela para de devolver
+// "hasNextPage: true" mesmo se o catálogo total for maior (é um limite
+// comum em API de busca/feed de marketplace, não só da Shopee). Como o
+// importador sempre pedia a mesma ordenação (sortType 2 = mais vendidos),
+// toda vez que o ciclo de páginas fechava e reiniciava da página 1, ele
+// caía exatamente na MESMA fatia de produtos de novo — nunca alcançava o
+// resto do catálogo. Agora o importador guarda também qual sortType está
+// usando (import_estado.sort_type — ver migration 0006) e alterna pra um
+// diferente da lista ROTACAO_SORT_TYPE toda vez que fecha um ciclo, então
+// cada volta completa traz uma fatia diferente do catálogo (por vendas,
+// relevância, comissão, preço) em vez de repetir sempre a mesma.
+//
+// CORREÇÃO 6 (observabilidade de categoria): o productCatIds bruto que a
+// Shopee manda agora é salvo em produtos.shopee_cat_ids (migration 0006)
+// — não é usado pra classificar ainda (MAPEAMENTO_CATEGORIAS continua
+// vazio, ver nota abaixo), mas fica guardado pra quando esse mapeamento
+// for descoberto, sem precisar reimportar nada. A classificação errada
+// que caía em "outros" e ficava presa lá agora também é revisitada à
+// parte pela function reclassificar-categorias (não é papel desta
+// function tentar de novo — ver README).
 // ============================================================
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
@@ -58,42 +66,42 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 // quando tentei 100. Não dá pra subir esse número.
 const LIMITE_POR_PAGINA = 50;
 
+// Ver CORREÇÃO 5 no topo do arquivo. Ordem: vendas (mais alinhado com o
+// que o Drop Score valoriza) → relevância → comissão → preço desc → preço
+// asc. Ao fechar um ciclo de páginas, passa pro próximo desta lista.
+const ROTACAO_SORT_TYPE: number[] = [2, 1, 5, 3, 4];
+
 // Não busca nota da loja de novo se ela já foi atualizada há menos disso.
 const IDADE_MAX_LOJA_MS = 24 * 60 * 60 * 1000; // 24h
 
 const LOG_AMOSTRA_PRECO = 3;
 
-// Mapeamento Shopee categoryId -> slug interno do Drop Secreto.
-// Opcional: a Shopee não expõe endpoint de "lista de categorias" e não dá
-// pra inventar os productCatIds reais da conta. Se um dia vocês
-// descobrirem os IDs certos (ex.: batendo o productCatIds que aparece nos
-// logs com o catálogo de categorias da própria conta Shopee), preencher
-// aqui — esse mapeamento tem prioridade sobre a palavra-chave no nome.
-// Até lá, fica vazio de propósito e a classificação roda 100% por nome.
+// ------------------------------------------------------------
+// Classificador por palavra-chave — MANTER EM SINCRONIA MANUAL com
+// _shared/categoria-classifier.ts e com a cópia em
+// reclassificar-categorias/index.ts (ver aviso lá também). Pela
+// Dashboard do Supabase, nenhuma das 3 functions consegue importar de
+// _shared — cada uma precisa da própria cópia.
+// ------------------------------------------------------------
 const MAPEAMENTO_CATEGORIAS: Record<number, string> = {};
 
-// Classificação por palavra-chave no nome do produto — lista inicial,
-// cobrindo os nichos já cadastrados em categorias. Ordem importa: entradas
-// mais específicas vêm antes das mais genéricas (ex.: "ssd" antes de
-// "informatica") pra evitar que uma categoria ampla "roube" um produto que
-// seria mais preciso em uma mais específica.
 const PALAVRAS_CHAVE_CATEGORIA: Array<[string, string[]]> = [
-  ['celulares', ['celular', 'smartphone', 'iphone', 'galaxy a', 'galaxy s', 'redmi', 'capinha de celular', 'película de vidro', 'pelicula de vidro']],
+  ['celulares', ['celular', 'smartphone', 'iphone', 'galaxy a', 'galaxy s', 'redmi', 'xiaomi', 'motorola g', 'capinha de celular', 'capa de celular', 'película de vidro', 'pelicula de vidro', 'carregador de celular', 'fone bluetooth']],
   ['ssd', ['ssd']],
   ['memoria-ram', ['memória ram', 'memoria ram', 'ddr3', 'ddr4', 'ddr5']],
-  ['notebook', ['notebook', 'laptop', 'macbook']],
-  ['monitor', ['monitor gamer', 'monitor led', 'monitor lcd', 'monitor curvo']],
-  ['gamer', ['gamer', 'headset', 'controle ps4', 'controle ps5', 'controle xbox', 'volante gamer', 'cadeira gamer', 'mousepad']],
-  ['informatica', ['mouse', 'teclado', 'webcam', 'impressora', 'pendrive', 'hd externo', 'ssd externo', 'roteador', 'placa mãe', 'placa-mãe', 'placa de vídeo', 'fonte atx', 'gabinete gamer', 'cooler']],
-  ['ferramentas', ['furadeira', 'parafusadeira', 'chave de fenda', 'jogo de chaves', 'alicate', 'martelo', 'trena', 'kit ferramentas', 'multímetro', 'multimetro']],
-  ['cozinha', ['panela', 'air fryer', 'fritadeira', 'liquidificador', 'cafeteira', 'talheres', 'frigideira', 'jogo de panelas']],
-  ['casa', ['organizador', 'cortina', 'tapete', 'travesseiro', 'edredom', 'luminária', 'jogo de cama', 'toalha de banho']],
-  ['beleza', ['batom', 'perfume', 'shampoo', 'creme facial', 'maquiagem', 'secador de cabelo', 'chapinha', 'base facial']],
-  ['moda', ['camiseta', 'vestido', 'tênis', 'tenis', 'bolsa feminina', 'calça jeans', 'blusa', 'jaqueta', 'sandália', 'sandalia']],
-  ['carro', ['pneu', 'som automotivo', 'capa de banco', 'suporte veicular', 'óleo de motor', 'oleo de motor', 'palheta limpador']],
-  ['pets', ['ração', 'racao', 'coleira', 'brinquedo para cachorro', 'brinquedo para gato', 'areia sanitária', 'aquário', 'aquario']],
-  ['criancas', ['brinquedo infantil', 'fralda', 'mamadeira', 'carrinho de bebê', 'carrinho de bebe', 'boneca', 'quebra-cabeça infantil']],
-  ['smart-home', ['lâmpada inteligente', 'lampada inteligente', 'câmera de segurança', 'camera de seguranca', 'alexa', 'google home', 'fechadura digital', 'tomada inteligente']],
+  ['notebook', ['notebook', 'laptop', 'macbook', 'ultrabook', 'chromebook']],
+  ['monitor', ['monitor gamer', 'monitor led', 'monitor lcd', 'monitor curvo', 'monitor ultrawide']],
+  ['gamer', ['gamer', 'headset', 'controle ps4', 'controle ps5', 'controle xbox', 'volante gamer', 'cadeira gamer', 'mousepad', 'joystick', 'teclado mecânico', 'teclado mecanico']],
+  ['informatica', ['mouse', 'teclado', 'webcam', 'impressora', 'pendrive', 'hd externo', 'ssd externo', 'roteador', 'placa mãe', 'placa-mãe', 'placa de vídeo', 'fonte atx', 'gabinete gamer', 'cooler', 'adaptador usb', 'cabo hdmi', 'hub usb']],
+  ['ferramentas', ['furadeira', 'parafusadeira', 'chave de fenda', 'jogo de chaves', 'alicate', 'martelo', 'trena', 'kit ferramentas', 'multímetro', 'multimetro', 'serra tico-tico', 'nível a laser', 'nivel a laser']],
+  ['cozinha', ['panela', 'air fryer', 'fritadeira', 'liquidificador', 'cafeteira', 'talheres', 'frigideira', 'jogo de panelas', 'panela de pressão', 'panela de pressao', 'batedeira']],
+  ['casa', ['organizador', 'cortina', 'tapete', 'travesseiro', 'edredom', 'luminária', 'luminaria', 'jogo de cama', 'toalha de banho', 'aspirador de pó', 'aspirador de po', 'ventilador']],
+  ['beleza', ['batom', 'perfume', 'shampoo', 'creme facial', 'maquiagem', 'secador de cabelo', 'chapinha', 'base facial', 'protetor solar', 'escova de cabelo']],
+  ['moda', ['camiseta', 'vestido', 'tênis', 'tenis', 'bolsa feminina', 'calça jeans', 'blusa', 'jaqueta', 'sandália', 'sandalia', 'relógio', 'relogio', 'óculos de sol', 'oculos de sol', 'mochila']],
+  ['carro', ['pneu', 'som automotivo', 'capa de banco', 'suporte veicular', 'óleo de motor', 'oleo de motor', 'palheta limpador', 'bateria automotiva', 'multimídia automotivo', 'multimidia automotivo']],
+  ['pets', ['ração', 'racao', 'coleira', 'brinquedo para cachorro', 'brinquedo para gato', 'areia sanitária', 'areia sanitaria', 'aquário', 'aquario', 'antipulgas', 'caminha para cachorro']],
+  ['criancas', ['brinquedo infantil', 'fralda', 'mamadeira', 'carrinho de bebê', 'carrinho de bebe', 'boneca', 'quebra-cabeça infantil', 'quebra-cabeca infantil', 'triciclo', 'jogo educativo']],
+  ['smart-home', ['lâmpada inteligente', 'lampada inteligente', 'câmera de segurança', 'camera de seguranca', 'alexa', 'google home', 'fechadura digital', 'tomada inteligente', 'sensor de presença', 'sensor de presenca', 'interruptor inteligente']],
 ];
 
 interface ShopeeOfferNode {
@@ -180,15 +188,18 @@ async function mapComLimite<T, R>(
 
 // ------------------------------------------------------------
 // Busca uma página de ofertas via productOfferV2, pedindo pageInfo pra
-// saber de verdade se tem próxima página.
+// saber de verdade se tem próxima página. sortType agora é variável (ver
+// CORREÇÃO 5 no topo do arquivo) — antes era fixo (sortType: 2 fixo no
+// texto da query, nunca mudava).
 // ------------------------------------------------------------
 async function buscarPaginaDeOfertas(
   page: number,
-  limit: number
+  limit: number,
+  sortType: number
 ): Promise<{ nodes: ShopeeOfferNode[]; pageInfo: PageInfo | null }> {
   const query = `
-    query Fetch($page: Int, $limit: Int) {
-      productOfferV2(listType: 0, sortType: 2, page: $page, limit: $limit) {
+    query Fetch($page: Int, $limit: Int, $sortType: Int) {
+      productOfferV2(listType: 0, sortType: $sortType, page: $page, limit: $limit) {
         nodes {
           itemId
           productName
@@ -216,7 +227,7 @@ async function buscarPaginaDeOfertas(
     }
   `;
 
-  const dados = await chamarGraphQL(query, { page, limit });
+  const dados = await chamarGraphQL(query, { page, limit, sortType });
   return {
     nodes: dados?.productOfferV2?.nodes ?? [],
     pageInfo: dados?.productOfferV2?.pageInfo ?? null,
@@ -257,7 +268,8 @@ function calcularPrecoAntigoAproximado(precoAtual: number, descontoPercentual: n
 }
 
 // Nunca retorna null — produto sem palavra-chave reconhecida cai em
-// "outros" (ver migration 0002 pra a categoria existir de verdade).
+// "outros" (ver migration 0002 pra a categoria existir de verdade). A
+// function reclassificar-categorias tenta de novo depois, à parte.
 function resolverCategoriaSlug(productCatIds: number[], nomeProduto: string): string {
   for (const catId of productCatIds ?? []) {
     const slug = MAPEAMENTO_CATEGORIAS[catId];
@@ -384,6 +396,9 @@ async function importarLote(
           nome: node.productName,
           loja_id: lojaIdPorShopId.get(node.shopId) ?? null,
           categoria_id: categoriaId,
+          // Bruto da Shopee — ver CORREÇÃO 6 no topo do arquivo. Não usado
+          // pra classificar ainda, só guardado pro futuro.
+          shopee_cat_ids: node.productCatIds ?? [],
           imagem_principal_url: node.imageUrl,
           preco_atual: precoAtual,
           preco_antigo: precoAntigo,
@@ -413,30 +428,40 @@ async function importarLote(
 }
 
 // ------------------------------------------------------------
-// Lê/grava em qual página a próxima execução deve continuar.
-// Requer a tabela import_estado — ver migration 0002.
+// Lê/grava em qual página e sortType a próxima execução deve continuar.
+// Requer as colunas de migration 0002 (proxima_pagina) e 0006 (sort_type).
 // ------------------------------------------------------------
-async function lerProximaPagina(supabase: any): Promise<number> {
+async function lerEstado(supabase: any): Promise<{ proximaPagina: number; sortTypeAtual: number }> {
   const { data, error } = await supabase
     .from('import_estado')
-    .select('proxima_pagina')
+    .select('proxima_pagina, sort_type')
     .eq('id', 1)
     .maybeSingle();
 
   if (error) {
-    console.error('Erro ao ler import_estado (rodou a migration 0002?):', error.message);
+    console.error('Erro ao ler import_estado (rodou as migrations 0002 e 0006?):', error.message);
   }
-  return data?.proxima_pagina ?? 1;
+  return {
+    proximaPagina: data?.proxima_pagina ?? 1,
+    sortTypeAtual: data?.sort_type ?? ROTACAO_SORT_TYPE[0],
+  };
 }
 
-async function salvarProximaPagina(supabase: any, pagina: number) {
+async function salvarEstado(supabase: any, pagina: number, sortType: number) {
   const { error } = await supabase
     .from('import_estado')
-    .upsert({ id: 1, proxima_pagina: pagina, atualizado_em: new Date().toISOString() });
+    .upsert({ id: 1, proxima_pagina: pagina, sort_type: sortType, atualizado_em: new Date().toISOString() });
 
   if (error) {
-    console.error('Erro ao salvar import_estado (rodou a migration 0002?):', error.message);
+    console.error('Erro ao salvar import_estado (rodou as migrations 0002 e 0006?):', error.message);
   }
+}
+
+// Próximo sortType da rotação — ver CORREÇÃO 5 no topo do arquivo.
+function proximoSortType(atual: number): number {
+  const indiceAtual = ROTACAO_SORT_TYPE.indexOf(atual);
+  const proximoIndice = indiceAtual === -1 ? 0 : (indiceAtual + 1) % ROTACAO_SORT_TYPE.length;
+  return ROTACAO_SORT_TYPE[proximoIndice];
 }
 
 // ------------------------------------------------------------
@@ -450,6 +475,7 @@ Deno.serve(async () => {
 
   let totalImportados = 0;
   let pagina = 1;
+  let sortTypeAtual = ROTACAO_SORT_TYPE[0];
 
   try {
     const { data: categorias } = await supabase.from('categorias').select('id, slug');
@@ -457,21 +483,30 @@ Deno.serve(async () => {
       (categorias ?? []).map((c: { id: string; slug: string }) => [c.slug, c.id])
     );
 
-    pagina = await lerProximaPagina(supabase);
+    const estado = await lerEstado(supabase);
+    pagina = estado.proximaPagina;
+    sortTypeAtual = estado.sortTypeAtual;
 
-    const { nodes, pageInfo } = await buscarPaginaDeOfertas(pagina, LIMITE_POR_PAGINA);
+    console.log(`Buscando página ${pagina} (sortType ${sortTypeAtual})...`);
+
+    const { nodes, pageInfo } = await buscarPaginaDeOfertas(pagina, LIMITE_POR_PAGINA, sortTypeAtual);
 
     if (nodes.length > 0) {
       totalImportados = await importarLote(supabase, nodes, categoriasIdPorSlug);
     }
 
-    // Sem próxima página (ou página veio vazia) — fecha o ciclo e a
-    // próxima execução recomeça do início do feed.
+    // Sem próxima página (ou página veio vazia) — fecha o ciclo desse
+    // sortType e a próxima execução recomeça da página 1 com o PRÓXIMO
+    // sortType da rotação (ver CORREÇÃO 5 no topo do arquivo). Antes
+    // recomeçava sempre com o mesmo sortType, e por isso sempre repetia a
+    // mesma fatia do catálogo.
     const temProximaPagina = pageInfo?.hasNextPage ?? nodes.length === LIMITE_POR_PAGINA;
-    const proximaPagina =
-      nodes.length === 0 || !temProximaPagina ? 1 : (pageInfo?.page ?? pagina) + 1;
+    const fechouCiclo = nodes.length === 0 || !temProximaPagina;
 
-    await salvarProximaPagina(supabase, proximaPagina);
+    const proximaPagina = fechouCiclo ? 1 : (pageInfo?.page ?? pagina) + 1;
+    const proximoSort = fechouCiclo ? proximoSortType(sortTypeAtual) : sortTypeAtual;
+
+    await salvarEstado(supabase, proximaPagina, proximoSort);
 
     try {
       await supabase.from('logs_importacao').insert({
@@ -485,13 +520,21 @@ Deno.serve(async () => {
     }
 
     return new Response(
-      JSON.stringify({ ok: true, importados: totalImportados, pagina, proximaPagina }),
+      JSON.stringify({
+        ok: true,
+        importados: totalImportados,
+        pagina,
+        sortTypeUsado: sortTypeAtual,
+        proximaPagina,
+        proximoSortType: proximoSort,
+      }),
       { status: 200 }
     );
   } catch (error_) {
-    // Mesmo em erro, tenta preservar a página em que estava (não volta a
-    // importação inteira pro zero por causa de uma falha pontual).
-    await salvarProximaPagina(supabase, pagina).catch(() => {});
+    // Mesmo em erro, tenta preservar a página e o sortType em que estava
+    // (não volta a importação inteira pro zero por causa de uma falha
+    // pontual).
+    await salvarEstado(supabase, pagina, sortTypeAtual).catch(() => {});
 
     // IMPORTANTE: o builder do supabase-js (.from().insert()) só implementa
     // .then() — não é uma Promise de verdade, não tem .catch(). Chamar
