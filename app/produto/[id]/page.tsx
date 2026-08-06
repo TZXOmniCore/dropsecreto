@@ -12,7 +12,7 @@ import { PriceHistoryChart } from '@/components/PriceHistoryChart';
 import { AlertaProdutoInline } from '@/components/AlertaProdutoInline';
 import { buscarProdutoPorId, buscarSemelhantes, buscarTopOfertas } from '@/lib/produtos';
 import { produtoPoucoVendido } from '@/lib/produto-badges';
-import { tempoRelativo } from '@/lib/format';
+import { tempoRelativo, jsonLdSeguro } from '@/lib/format';
 import { SITE_URL } from '@/lib/site';
 
 export const revalidate = 60;
@@ -111,7 +111,7 @@ export default async function ProdutoPage({
         type="application/ld+json"
         // eslint-disable-next-line react/no-danger
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
+          __html: jsonLdSeguro({
             '@context': 'https://schema.org',
             '@type': 'Product',
             name: produto.nome,

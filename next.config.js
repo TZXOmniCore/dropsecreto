@@ -34,23 +34,10 @@ const nextConfig = {
           // Desliga recursos do navegador que o site não usa e que, se mal
           // configurados por engano no futuro, virariam risco de privacidade.
           { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
-          // Content-Security-Policy: só permite carregar script/estilo/
-          // imagem/conexão dos domínios que o site de fato usa (analytics,
-          // monitoramento de erro e imagens da Shopee inclusos). Se um
-          // domínio novo for adicionado depois (outro analytics, por
-          // exemplo), precisa entrar aqui também, senão o navegador bloqueia.
-          {
-            key: 'Content-Security-Policy',
-            value: [
-              "default-src 'self'",
-              "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.clarity.ms https://*.clarity.ms https://c.bing.com https://*.ingest.sentry.io https://*.ingest.us.sentry.io",
-              "style-src 'self' 'unsafe-inline'",
-              "img-src 'self' data: https:",
-              "font-src 'self' data:",
-              "connect-src 'self' https://*.supabase.co https://www.google-analytics.com https://*.google-analytics.com https://www.googletagmanager.com https://www.clarity.ms https://*.clarity.ms https://c.bing.com https://*.ingest.sentry.io https://*.ingest.us.sentry.io",
-              "frame-ancestors 'self'",
-            ].join('; '),
-          },
+          // Content-Security-Policy NÃO fica aqui de propósito — ela agora é
+          // montada em middleware.ts, porque precisa de um nonce diferente
+          // a cada requisição (um valor fixo aqui seria sempre a mesma
+          // string, o que anula a proteção do nonce). Ver middleware.ts.
         ],
       },
     ];

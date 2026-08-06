@@ -466,7 +466,12 @@ export async function buscarProdutosPorNome(
   const termoLimpo = termo.trim();
   if (!termoLimpo) return [];
 
-  let query = supabase.from('produtos').select(CAMPOS_PRODUTO).ilike('nome', `%${termoLimpo}%`);
+  // Escapa os curingas do próprio ILIKE ('%' e '_') antes de envolver o
+  // termo nos curingas da busca — sem isso, alguém digitando "%" ou "_"
+  // na busca influencia o próprio padrão em vez de ser tratado como texto
+  // literal (o escape padrão do Postgres pra LIKE/ILIKE é a barra invertida).
+  const termoEscapado = termoLimpo.replace(/[\\%_]/g, '\\$&');
+  let query = supabase.from('produtos').select(CAMPOS_PRODUTO).ilike('nome', `%${termoEscapado}%`);
 
   if (filtros.descontoMinimo) {
     query = query.gte('desconto_percentual', filtros.descontoMinimo);

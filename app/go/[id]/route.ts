@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
+import { UUID_REGEX, sanitizarLinkAfiliado, criarLimitador } from '@/lib/link-redirect';
 
 // ============================================================
 // DROP SECRETO — Redirecionador de afiliado
@@ -28,59 +29,13 @@ import { getSupabaseAdmin } from '@/lib/supabase-admin';
 
 export const dynamic = 'force-dynamic';
 
-// UUID (formato usado pelo Supabase pro id de produto). Valida antes de
-// bater no banco — barato, e evita mandar lixo pra query por engano ou
-// por tentativa de abuso via URL manipulada.
-const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-// ------------------------------------------------------------------
-// Rate limit simples, em memória, por IP — sem depender de nenhum
-// serviço externo (Redis/Upstash) nem custar nada. Limite generoso o
-// bastante pra nunca incomodar uma pessoa real clicando em produtos,
-// mas que já barra script batendo essa rota em loop.
-//
-// Limitação conhecida: numa função serverless, cada instância "fria"
-// tem seu próprio contador (não é compartilhado entre instâncias). Não
-// é uma defesa perfeita contra um ataque distribuído sério, mas cobre
-// o cenário mais comum (um bot simples batendo repetido do mesmo IP) e
-// pode ser trocado por um rate limit compartilhado (ex.: Upstash
-// Redis) mais pra frente, se o tráfego justificar o custo extra.
-// ------------------------------------------------------------------
-const JANELA_MS = 60_000;
-const LIMITE_POR_JANELA = 30;
-const contadorPorIp = new Map<string, { contagem: number; resetaEm: number }>();
-
-function excedeuLimite(ip: string): boolean {
-  const agora = Date.now();
-  const atual = contadorPorIp.get(ip);
-  if (!atual || agora > atual.resetaEm) {
-    contadorPorIp.set(ip, { contagem: 1, resetaEm: agora + JANELA_MS });
-    return false;
-  }
-  atual.contagem += 1;
-  return atual.contagem > LIMITE_POR_JANELA;
-}
-
-// Garante que o link do afiliado é uma URL absoluta válida e sem
-// caracteres que quebram um header HTTP (quebra de linha, tab, espaço
-// cru, acentos não codificados). Se não der pra confiar no link, retorna
-// null e quem chamou decide o fallback — nunca deixa passar algo que
-// pode derrubar a resposta.
-function sanitizarLinkAfiliado(bruto: string): string | null {
-  try {
-    // remove quebras de linha, tabs e outros caracteres de controle
-    const limpo = bruto.trim().replace(/[\r\n\t\u0000-\u001f\u007f]/g, '');
-    if (!limpo) return null;
-
-    const url = new URL(limpo);
-    if (url.protocol !== 'http:' && url.protocol !== 'https:') return null;
-
-    // recodifica qualquer acento/caractere especial que tenha sobrado cru
-    return encodeURI(decodeURI(url.toString()));
-  } catch {
-    return null;
-  }
-}
+// UUID_REGEX, sanitizarLinkAfiliado e criarLimitador foram movidos pra
+// lib/link-redirect.ts — mesma lógica de antes, só extraída pra um
+// arquivo próprio pra poder ser testada com Vitest (ver
+// lib/__tests__/link-redirect.test.ts). Limite generoso o bastante pra
+// nunca incomodar uma pessoa real clicando em produtos, mas que já barra
+// script batendo essa rota em loop.
+const excedeuLimite = criarLimitador({ janelaMs: 60_000, limitePorJanela: 30 });
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;

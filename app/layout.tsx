@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next';
+import { headers } from 'next/headers';
 import { Bricolage_Grotesque, IBM_Plex_Sans, IBM_Plex_Mono } from 'next/font/google';
 import { PwaRegister } from '@/components/PwaRegister';
 import { Analytics } from '@/components/Analytics';
@@ -84,13 +85,18 @@ export const viewport: Viewport = {
   themeColor: '#0A0A0B',
 };
 
-export default function RootLayout({ children }: { readonly children: React.ReactNode }) {
+export default async function RootLayout({ children }: { readonly children: React.ReactNode }) {
+  // Nonce gerado por requisição em middleware.ts, repassado aqui pra
+  // liberar os scripts inline do Analytics sem precisar de 'unsafe-inline'
+  // no script-src da CSP (ver comentário em components/Analytics.tsx).
+  const nonce = (await headers()).get('x-nonce') ?? undefined;
+
   return (
     <html lang="pt-BR" className={`${display.variable} ${body.variable} ${mono.variable}`}>
       <body>
         {children}
         <PwaRegister />
-        <Analytics />
+        <Analytics nonce={nonce} />
         <CookieBanner />
         <VoltarAoTopo />
         <BoasVindasToast />

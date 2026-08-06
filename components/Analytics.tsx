@@ -21,7 +21,12 @@ import { lerConsentimento, aoMudarConsentimento } from '@/lib/cookie-consent';
 // essenciais — por isso só carregam depois que a pessoa aceita no
 // CookieBanner (ver lib/cookie-consent.ts). Sem aceite, nenhum dos dois
 // script chega a ser inserido na página.
-export function Analytics() {
+//
+// IMPORTANTE (CSP): a Content-Security-Policy (montada em middleware.ts)
+// não usa mais 'unsafe-inline' em script-src — cada <Script> inline aqui
+// precisa levar o nonce daquela requisição (prop `nonce`, lido em
+// app/layout.tsx via headers()) ou o navegador bloqueia a execução.
+export function Analytics({ nonce }: { readonly nonce?: string }) {
   const gaId = process.env.NEXT_PUBLIC_GA_ID;
   const clarityId = process.env.NEXT_PUBLIC_CLARITY_ID;
   const [consentiu, setConsentiu] = useState(false);
@@ -37,8 +42,12 @@ export function Analytics() {
     <>
       {gaId && (
         <>
-          <Script src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`} strategy="afterInteractive" />
-          <Script id="ga-init" strategy="afterInteractive">
+          <Script
+            src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`}
+            strategy="afterInteractive"
+            nonce={nonce}
+          />
+          <Script id="ga-init" strategy="afterInteractive" nonce={nonce}>
             {`
               window.dataLayer = window.dataLayer || [];
               function gtag(){dataLayer.push(arguments);}
@@ -50,7 +59,7 @@ export function Analytics() {
       )}
 
       {clarityId && (
-        <Script id="clarity-init" strategy="afterInteractive">
+        <Script id="clarity-init" strategy="afterInteractive" nonce={nonce}>
           {`
             (function(c,l,a,r,i,t,y){
               c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
