@@ -8,6 +8,7 @@ export const revalidate = 60;
 
 export const metadata = {
   title: 'Categorias — Drop Secreto',
+  description: 'Todas as categorias com ofertas aprovadas pelo Drop Score, de celular a produto de cozinha.',
   alternates: { canonical: '/categorias' },
 };
 

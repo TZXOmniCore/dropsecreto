@@ -5,6 +5,8 @@ import { Footer } from '@/components/Footer';
 
 export const metadata = {
   title: 'Sobre nós — Drop Secreto',
+  description:
+    'O Drop Secreto encontra e ranqueia as melhores ofertas do momento, em qualquer categoria, pra você não perder tempo comparando preço loja por loja.',
   alternates: { canonical: '/sobre-nos' },
 };
 

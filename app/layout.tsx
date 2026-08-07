@@ -60,13 +60,14 @@ export const metadata: Metadata = {
     siteName: 'Drop Secreto',
     title: TITULO_PADRAO,
     description: DESCRICAO_PADRAO,
-    images: [{ url: '/icon-512.png', width: 512, height: 512 }],
+    // A imagem em si vem de app/opengraph-image.tsx (gerada em código,
+    // 1200x630) — não precisa listar aqui, o Next.js já injeta sozinho.
   },
   twitter: {
     card: 'summary_large_image',
     title: TITULO_PADRAO,
     description: DESCRICAO_PADRAO,
-    images: ['/icon-512.png'],
+    // Idem: imagem vem de app/twitter-image.tsx.
   },
   // Cola aqui o código de verificação do Google Search Console (Propriedade
   // -> Verificação -> tag HTML -> só o valor do content="...") como variável
